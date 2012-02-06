@@ -138,6 +138,8 @@ function _do_cmd(self, ...)
         end
     end
 
+    -- print("request: ", table.concat(req, ""))
+
     local bytes, err = sock:send(req)
     if not bytes then
         return nil, err
@@ -156,6 +158,8 @@ function read_reply(sock)
     local prefix = sub(line, 1, 1)
 
     if prefix == "$" then
+        -- print("bulk reply")
+
         local size = tonumber(sub(line, 2))
         if size < 0 then
             return nil, nil
@@ -174,12 +178,18 @@ function read_reply(sock)
         return data
 
     elseif prefix == "+" then
-        -- status reply
+        -- print("status reply")
+
         return sub(line, 2)
 
     elseif prefix == "*" then
-        -- multi-bulk reply
         local n = tonumber(sub(line, 2))
+
+        -- print("multi-bulk reply: ", n)
+        if n < 0 then
+            return nil
+        end
+
         local vals = {};
         for i = 1, n do
             table.insert(vals, read_reply(sock))
@@ -191,6 +201,8 @@ function read_reply(sock)
         return tonumber(sub(line, 2))
 
     elseif prefix == "-" then
+        -- print("error reply: ", n)
+
         return nil, sub(line, 2)
 
     else

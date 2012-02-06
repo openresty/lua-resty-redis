@@ -438,3 +438,111 @@ lrange result: ["hello","world"]
 --- no_error_log
 [error]
 
+
+
+=== TEST 8: blpop expires its own timeout
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:set_timeout(2500) -- 2.5 sec
+
+            -- or connect to a unix domain socket file listened
+            -- by a redis server:
+            --     local ok, err = red:connect("unix:/path/to/redis.sock")
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            local res, err = red:flushall()
+            if not res then
+                ngx.say("failed to flushall: ", err)
+                return
+            end
+            ngx.say("flushall: ", res)
+
+            local res, err = red:blpop("key", 1)
+            if err then
+                ngx.say("failed to blpop: ", err)
+                return
+            end
+
+            if not res then
+                ngx.say("no element popped.")
+                return
+            end
+
+            local cjson = require "cjson"
+            ngx.say("blpop result: ", cjson.encode(res))
+
+            red:close()
+        ';
+    }
+--- request
+GET /t
+--- response_body
+flushall: OK
+no element popped.
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: blpop expires cosocket timeout
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:set_timeout(100) -- 100 ms
+
+            -- or connect to a unix domain socket file listened
+            -- by a redis server:
+            --     local ok, err = red:connect("unix:/path/to/redis.sock")
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            local res, err = red:flushall()
+            if not res then
+                ngx.say("failed to flushall: ", err)
+                return
+            end
+            ngx.say("flushall: ", res)
+
+            local res, err = red:blpop("key", 1)
+            if err then
+                ngx.say("failed to blpop: ", err)
+                return
+            end
+
+            if not res then
+                ngx.say("no element popped.")
+                return
+            end
+
+            local cjson = require "cjson"
+            ngx.say("blpop result: ", cjson.encode(res))
+
+            red:close()
+        ';
+    }
+--- request
+GET /t
+--- response_body
+flushall: OK
+failed to blpop: timeout
+--- no_error_log
+[error]
+
