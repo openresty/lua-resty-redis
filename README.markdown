@@ -83,6 +83,40 @@ Synopsis
 Methods
 =======
 
+All of the Redis commands have their own methods with the same name except all in lower case.
+
+You can find the complete list of Redis commands here:
+
+http://redis.io/commands
+
+You need to check out this Redis command reference to see what Redis command accepts what arguments.
+
+The Redis command arguments can be directly fed into the corresponding method call. For example, the "GET" redis command accepts a single key argument, then you can just call the "get" method like this:
+
+    local res, err = red:get("key")
+
+Similarly, the "LRANGE" redis command accepts threee arguments, then you should call the "lrange" method like this:
+
+    local res, err = red:lrange("nokey", 0, 1)
+
+For example, "SET", "GET", "LRANGE", and "BLPOP" commands correspond to the methods "set", "get", "lrange", and "blpop".
+
+All these command methods returns a single result in success and `nil` otherwise. In case of errors or failures, it will also return a second value which is a string describing the error.
+
+A Redis "status reply" results in a string typed return value with the "+" prefix stripped.
+
+A Redis "integer reply" results in a Lua number typed return value.
+
+A Redis "error reply" results in a `nil` value *and* a string describing the error.
+
+A non-nil Redis "bulk reply" results in a Lua string as the return value. A nil bulk reply results in a Lua `nil` return value.
+
+A non-nil Redis "multi-bulk reply" results in a Lua table holding all the composing values (if any). A nil multi-bulk reply returns in a single `nil` value.
+
+See http://redis.io/topics/protocol for details regarding various Redis reply types.
+
+In addition to all those redis command methods, the following methods are also provided:
+
 new
 ---
 `syntax: red = redis:new()`
