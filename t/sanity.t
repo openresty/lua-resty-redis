@@ -17,7 +17,7 @@ $ENV{TEST_NGINX_RESOLVER} = '8.8.8.8';
 $ENV{TEST_NGINX_REDIS_PORT} ||= 6379;
 
 no_long_string();
-no_diff();
+#no_diff();
 
 run_tests();
 
@@ -105,7 +105,6 @@ dog: an animal
                 ngx.say("failed to flushall: ", err)
                 return
             end
-
             ngx.say("flushall: ", res)
 
             red:close()
@@ -372,6 +371,70 @@ connections: 1
 GET /t
 --- response_body
 failed to set connections: ERR wrong number of arguments for 'incr' command
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: lpush and lrange
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:set_timeout(1000) -- 1 sec
+
+            -- or connect to a unix domain socket file listened
+            -- by a redis server:
+            --     local ok, err = red:connect("unix:/path/to/redis.sock")
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            local res, err = red:flushall()
+            if not res then
+                ngx.say("failed to flushall: ", err)
+                return
+            end
+            ngx.say("flushall: ", res)
+
+            local res, err = red:lpush("mylist", "world")
+            if not res then
+                ngx.say("failed to lpush: ", err)
+                return
+            end
+            ngx.say("lpush result: ", res)
+
+            res, err = red:lpush("mylist", "hello")
+            if not res then
+                ngx.say("failed to lpush: ", err)
+                return
+            end
+            ngx.say("lpush result: ", res)
+
+            res, err = red:lrange("mylist", 0, -1)
+            if not res then
+                ngx.say("failed to lrange: ", err)
+                return
+            end
+            local cjson = require "cjson"
+            ngx.say("lrange result: ", cjson.encode(res))
+
+            red:close()
+        ';
+    }
+--- request
+GET /t
+--- response_body
+flushall: OK
+lpush result: 1
+lpush result: 2
+lrange result: ["hello","world"]
 --- no_error_log
 [error]
 
