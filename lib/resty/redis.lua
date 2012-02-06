@@ -187,7 +187,7 @@ function read_reply(sock)
         return vals
 
     elseif prefix == ":" then
-        -- integer reply
+        -- print("integer reply")
         return tonumber(sub(line, 2))
 
     elseif prefix == "-" then
