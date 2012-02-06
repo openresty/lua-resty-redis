@@ -3,6 +3,51 @@
 module("resty.redis", package.seeall)
 
 
+local commands = {
+    "append",            "auth",              "bgrewriteaof",
+    "bgsave",            "blpop",             "brpop",
+    "brpoplpush",        "config",            "dbsize",
+    "debug",             "decr",              "decrby",
+    "del",               "discard",           "echo",
+    "eval",              "exec",              "exists",
+    "expire",            "expireat",          "flushall",
+    "flushdb",           "get",               "getbit",
+    "getrange",          "getset",            "hdel",
+    "hexists",           "hget",              "hgetall",
+    "hincrby",           "hkeys",             "hlen",
+    "hmget",             "hmset",             "hset",
+    "hsetnx",            "hvals",             "incr",
+    "incrby",            "info",              "keys",
+    "lastsave",          "lindex",            "linsert",
+    "llen",              "lpop",              "lpush",
+    "lpushx",            "lrange",            "lrem",
+    "lset",              "ltrim",             "mget",
+    "monitor",           "move",              "mset",
+    "msetnx",            "multi",             "object",
+    "persist",           "ping",              "psubscribe",
+    "publish",           "punsubscribe",      "quit",
+    "randomkey",         "rename",            "renamenx",
+    "rpop",              "rpoplpush",         "rpush",
+    "rpushx",            "sadd",              "save",
+    "scard",             "sdiff",             "sdiffstore",
+    "select",            "set",               "setbit",
+    "setex",             "setnx",             "setrange",
+    "shutdown",          "sinter",            "sinterstore",
+    "sismember",         "slaveof",           "slowlog",
+    "smembers",          "smove",             "sort",
+    "spop",              "srandmember",       "srem",
+    "strlen",            "subscribe",         "sunion",
+    "sunionstore",       "sync",              "ttl",
+    "type",              "unsubscribe",       "unwatch",
+    "watch",             "zadd",              "zcard",
+    "zcount",            "zincrby",           "zinterstore",
+    "zrange",            "zrangebyscore",     "zrank",
+    "zrem",              "zremrangebyrank",   "zremrangebyscore",
+    "zrevrange",         "zrevrangebyscore",  "zrevrank",
+    "zscore",            "zunionstore"
+}
+
+
 local mt = { __index = resty.redis }
 
 local sub = string.sub
@@ -64,13 +109,11 @@ function close(self)
 end
 
 
-function set(self, ...)
-    return _do_cmd(self, "set", ...)
-end
-
-
-function get(self, ...)
-    return _do_cmd(self, "get", ...)
+for i, cmd in ipairs(commands) do
+    resty.redis[cmd] =
+        function (self, ...)
+            return _do_cmd(self, cmd, ...)
+        end
 end
 
 
