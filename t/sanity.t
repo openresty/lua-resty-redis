@@ -546,3 +546,49 @@ failed to blpop: timeout
 --- no_error_log
 [error]
 
+
+
+=== TEST 10: set keepalive and get reused times
+--- http_config eval: $::HttpConfig
+--- config
+    resolver $TEST_NGINX_RESOLVER;
+    location /t {
+        content_by_lua '
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:set_timeout(100) -- 100 ms
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            local times = red:get_reused_times()
+            ngx.say("reused times: ", times)
+
+            local ok, err = red:set_keepalive()
+            if not ok then
+                ngx.say("failed to set keepalive: ", err)
+                return
+            end
+
+            ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            times = red:get_reused_times()
+            ngx.say("reused times: ", times)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+reused times: 0
+reused times: 1
+--- no_error_log
+[error]
+
