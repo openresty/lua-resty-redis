@@ -170,7 +170,6 @@ TODO
 ====
 
 * implement the redis pipelining API.
-* implement the UDP part of the redis ascii protocol.
 
 Author
 ======
