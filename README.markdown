@@ -20,7 +20,7 @@ http://wiki.nginx.org/HttpLuaModule
 This Lua library takes advantage of ngx_lua's cosocket API, which ensures
 100% nonblocking behavior.
 
-Note that at least [ngx_lua 0.5.0rc3](https://github.com/chaoslawful/lua-nginx-module/tags) or [ngx_openresty 1.0.11.3](http://openresty.org/#Download) is required.
+Note that at least [ngx_lua 0.5.0rc5](https://github.com/chaoslawful/lua-nginx-module/tags) or [ngx_openresty 1.0.11.7](http://openresty.org/#Download) is required.
 
 Synopsis
 ========
@@ -54,12 +54,12 @@ Synopsis
                 ngx.say("set result: ", res)
 
                 local res, err = red:get("dog")
-                if err then
+                if not res then
                     ngx.say("failed to get dog: ", err)
                     return
                 end
 
-                if not res then
+                if res == ngx.null then
                     ngx.say("dog not found.")
                     return
                 end
@@ -107,11 +107,13 @@ A Redis "status reply" results in a string typed return value with the "+" prefi
 
 A Redis "integer reply" results in a Lua number typed return value.
 
-A Redis "error reply" results in a `nil` value *and* a string describing the error.
+A Redis "error reply" results in a `false` value *and* a string describing the error.
 
-A non-nil Redis "bulk reply" results in a Lua string as the return value. A nil bulk reply results in a Lua `nil` return value.
+A non-nil Redis "bulk reply" results in a Lua string as the return value. A nil bulk reply results in a `ngx.null` return value.
 
-A non-nil Redis "multi-bulk reply" results in a Lua table holding all the composing values (if any). A nil multi-bulk reply returns in a single `nil` value.
+A non-nil Redis "multi-bulk reply" results in a Lua table holding all the composing values (if any). If any of the composing value is a valid redis error value, then it will be a two element table `{false, err}`.
+
+A nil multi-bulk reply returns in a `ngx.null` value.
 
 See http://redis.io/topics/protocol for details regarding various Redis reply types.
 
@@ -165,6 +167,17 @@ Closes the current redis connection and returns the status.
 
 In case of success, returns `1`. In case of errors, returns `nil` with a string describing the error.
 
+Debugging
+=========
+
+It is usually convenient to use the [lua-cjson](http://www.kyne.com.au/~mark/software/lua-cjson.php) library to encode the return values of the redis command methods to JSON. For example,
+
+    local cjson = require "cjson"
+    ...
+    local res, err = red:mget("h1234", "h5678")
+    if res then
+        print("res: ", cjson.encode(res))
+    end
 
 TODO
 ====

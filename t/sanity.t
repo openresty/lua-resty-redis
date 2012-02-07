@@ -153,7 +153,7 @@ flushall: OK
                 return
             end
 
-            if not res then
+            if res == ngx.null then
                 ngx.say("not_found not found.")
                 return
             end
@@ -207,7 +207,7 @@ not_found not found.
                 return
             end
 
-            if not res then
+            if res == ngx.null then
                 ngx.say("nokey not found.")
                 return
             end
@@ -358,7 +358,7 @@ connections: 1
 
             res, err = red:incr("connections", 12)
             if not res then
-                ngx.say("failed to set connections: ", err)
+                ngx.say("failed to set connections: ", res, ": ", err)
                 return
             end
 
@@ -370,7 +370,7 @@ connections: 1
 --- request
 GET /t
 --- response_body
-failed to set connections: ERR wrong number of arguments for 'incr' command
+failed to set connections: false: ERR wrong number of arguments for 'incr' command
 --- no_error_log
 [error]
 
@@ -473,7 +473,7 @@ lrange result: ["hello","world"]
                 return
             end
 
-            if not res then
+            if res == ngx.null then
                 ngx.say("no element popped.")
                 return
             end
@@ -503,7 +503,7 @@ no element popped.
             local redis = require "resty.redis"
             local red = redis:new()
 
-            red:set_timeout(100) -- 100 ms
+            red:set_timeout(200) -- 200 ms
 
             -- or connect to a unix domain socket file listened
             -- by a redis server:
@@ -590,6 +590,64 @@ GET /t
 --- response_body
 reused times: 0
 reused times: 1
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: mget
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:set_timeout(1000) -- 1 sec
+
+            -- or connect to a unix domain socket file listened
+            -- by a redis server:
+            --     local ok, err = red:connect("unix:/path/to/redis.sock")
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            res, err = red:set("dog", "an animal")
+            if not res then
+                ngx.say("failed to set dog: ", err)
+                return
+            end
+
+            ngx.say("set dog: ", res)
+
+            for i = 1, 2 do
+                local res, err = red:mget("dog", "cat", "dog")
+                if err then
+                    ngx.say("failed to get dog: ", err)
+                    return
+                end
+
+                if not res then
+                    ngx.say("dog not found.")
+                    return
+                end
+
+                local cjson = require "cjson"
+                ngx.say("res: ", cjson.encode(res))
+            end
+
+            red:close()
+        ';
+    }
+--- request
+GET /t
+--- response_body
+set dog: OK
+res: ["an animal",null,"an animal"]
+res: ["an animal",null,"an animal"]
 --- no_error_log
 [error]
 

@@ -162,7 +162,7 @@ function read_reply(sock)
 
         local size = tonumber(sub(line, 2))
         if size < 0 then
-            return nil
+            return ngx.null
         end
 
         local data, err = sock:receive(size)
@@ -187,16 +187,21 @@ function read_reply(sock)
 
         -- print("multi-bulk reply: ", n)
         if n < 0 then
-            return nil
+            return ngx.null
         end
 
         local vals = {};
         for i = 1, n do
             local res, err = read_reply(sock)
-            if err then
-                table.insert(vals, {res, err})
-            else
+            if res then
                 table.insert(vals, res)
+
+            elseif res == nil then
+                return nil, err
+
+            else
+                -- be a valid redis error value
+                table.insert(vals, {false, err})
             end
         end
         return vals
@@ -208,7 +213,7 @@ function read_reply(sock)
     elseif prefix == "-" then
         -- print("error reply: ", n)
 
-        return nil, sub(line, 2)
+        return false, sub(line, 2)
 
     else
         return nil, "unkown prefix: \"" .. prefix .. "\""
