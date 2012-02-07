@@ -491,6 +491,7 @@ flushall: OK
 no element popped.
 --- no_error_log
 [error]
+--- timeout: 3
 
 
 

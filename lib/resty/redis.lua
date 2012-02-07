@@ -162,7 +162,7 @@ function read_reply(sock)
 
         local size = tonumber(sub(line, 2))
         if size < 0 then
-            return nil, nil
+            return nil
         end
 
         local data, err = sock:receive(size)
