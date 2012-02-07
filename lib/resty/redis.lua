@@ -192,7 +192,12 @@ function read_reply(sock)
 
         local vals = {};
         for i = 1, n do
-            table.insert(vals, read_reply(sock))
+            local res, err = read_reply(sock)
+            if err then
+                table.insert(vals, {res, err})
+            else
+                table.insert(vals, res)
+            end
         end
         return vals
 
