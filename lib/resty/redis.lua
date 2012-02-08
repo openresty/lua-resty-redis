@@ -52,6 +52,9 @@ local mt = { __index = resty.redis }
 
 local sub = string.sub
 local tcp = ngx.socket.tcp
+local insert = table.insert
+local len = string.len
+local null = ngx.null
 
 
 function new(self)
@@ -128,13 +131,13 @@ function _do_cmd(self, ...)
     local req = {"*", #args, "\r\n"}
     for i, arg in ipairs(args) do
         if not arg then
-            table.insert(req, "$-1\r\n")
+            insert(req, "$-1\r\n")
         else
-            table.insert(req, "$")
-            table.insert(req, string.len(arg))
-            table.insert(req, "\r\n")
-            table.insert(req, arg)
-            table.insert(req, "\r\n")
+            insert(req, "$")
+            insert(req, len(arg))
+            insert(req, "\r\n")
+            insert(req, arg)
+            insert(req, "\r\n")
         end
     end
 
@@ -162,7 +165,7 @@ function read_reply(sock)
 
         local size = tonumber(sub(line, 2))
         if size < 0 then
-            return ngx.null
+            return null
         end
 
         local data, err = sock:receive(size)
@@ -187,21 +190,21 @@ function read_reply(sock)
 
         -- print("multi-bulk reply: ", n)
         if n < 0 then
-            return ngx.null
+            return null
         end
 
         local vals = {};
         for i = 1, n do
             local res, err = read_reply(sock)
             if res then
-                table.insert(vals, res)
+                insert(vals, res)
 
             elseif res == nil then
                 return nil, err
 
             else
                 -- be a valid redis error value
-                table.insert(vals, {false, err})
+                insert(vals, {false, err})
             end
         end
         return vals
