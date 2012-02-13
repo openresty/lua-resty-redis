@@ -130,7 +130,7 @@ connect
 `syntax: ok, err = red:connect(host, port)`
 `syntax: ok, err = red:connect("unix:/path/to/unix.sock")`
 
-Attempts to Connect to the remote host and port that the redis server is listening to or a local unix domain socket file listened by the redis server.
+Attempts to connect to the remote host and port that the redis server is listening to or a local unix domain socket file listened by the redis server.
 
 Before actually resolving the host name and connecting to the remote backend, this method will always look up the connection pool for matched idle connections created by previous calls of this method.
 
