@@ -128,6 +128,7 @@ Creates a redis object. Returns `nil` on error.
 connect
 -------
 `syntax: ok, err = red:connect(host, port)`
+
 `syntax: ok, err = red:connect("unix:/path/to/unix.sock")`
 
 Attempts to connect to the remote host and port that the redis server is listening to or a local unix domain socket file listened by the redis server.
