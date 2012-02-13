@@ -1,7 +1,7 @@
 Name
 ====
 
-ngx_lua - Lua redis client driver for the ngx_lua based on the cosocket API
+lua-resty-redis - Lua redis client driver for the ngx_lua based on the cosocket API
 
 Status
 ======
