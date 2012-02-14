@@ -211,5 +211,6 @@ See Also
 ========
 * the ngx_lua module: http://wiki.nginx.org/HttpLuaModule
 * the redis wired protocol specification: http://redis.io/topics/protocol
-* the lua-resty-memcached library: https://github.com/agentzh/lua-resty-memcached
+* the [lua-resty-memcached](https://github.com/agentzh/lua-resty-memcached) library
+* the [lua-resty-mysql](https://github.com/agentzh/lua-resty-mysql) library
 
