@@ -544,8 +544,8 @@ GET /t
 --- response_body
 flushall: OK
 failed to blpop: timeout
---- no_error_log
-[error]
+--- error_log
+lua socket read timed out
 
 
 
