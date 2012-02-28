@@ -153,10 +153,9 @@ In case of success, returns `1`. In case of errors, returns `nil` with a string 
 
 get_reused_times
 ----------------
-`syntax: red:set_keepalive(max_idle_timeout, pool_size)`
+`syntax: times, err = red:get_reused_times()`
 
 This method returns the (successfully) reused times for the current connection. In case of error, it returns `nil` and a string describing the error.
-
 
 If the current connection does not come from the built-in connection pool, then this method always returns `0`, that is, the connection has never been reused (yet). If the connection comes from the connection pool, then the return value is always non-zero. So this method can also be used to determine if the current connection comes from the pool.
 
