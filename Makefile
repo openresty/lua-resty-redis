@@ -1,4 +1,4 @@
-OPENRESTY_PREFIX=/usr/local/openresty
+OPENRESTY_PREFIX=/usr/local/openresty-debug
 .PHONY: all test
 
 all: ;
