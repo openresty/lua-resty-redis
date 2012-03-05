@@ -45,7 +45,7 @@ local commands = {
     "zrange",            "zrangebyscore",     "zrank",
     "zrem",              "zremrangebyrank",   "zremrangebyscore",
     "zrevrange",         "zrevrangebyscore",  "zrevrank",
-    "zscore",            "zunionstore"
+    "zscore",            "zunionstore",       "evalsha"
 }
 
 
