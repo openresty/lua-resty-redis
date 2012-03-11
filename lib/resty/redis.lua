@@ -112,47 +112,7 @@ function close(self)
 end
 
 
-for i, cmd in ipairs(commands) do
-    resty.redis[cmd] =
-        function (self, ...)
-            return _do_cmd(self, cmd, ...)
-        end
-end
-
-
-function _do_cmd(self, ...)
-    local args = {...}
-
-    local sock = self.sock
-    if not sock then
-        return nil, "not initialized"
-    end
-
-    local req = {"*", #args, "\r\n"}
-    for i, arg in ipairs(args) do
-        if not arg then
-            insert(req, "$-1\r\n")
-        else
-            insert(req, "$")
-            insert(req, len(arg))
-            insert(req, "\r\n")
-            insert(req, arg)
-            insert(req, "\r\n")
-        end
-    end
-
-    -- print("request: ", table.concat(req, ""))
-
-    local bytes, err = sock:send(req)
-    if not bytes then
-        return nil, err
-    end
-
-    return read_reply(sock)
-end
-
-
-function read_reply(sock)
+local function _read_reply(sock)
     local line, err = sock:receive()
     if not line then
         return nil, err
@@ -195,7 +155,7 @@ function read_reply(sock)
 
         local vals = {};
         for i = 1, n do
-            local res, err = read_reply(sock)
+            local res, err = _read_reply(sock)
             if res then
                 insert(vals, res)
 
@@ -221,6 +181,54 @@ function read_reply(sock)
     else
         return nil, "unkown prefix: \"" .. prefix .. "\""
     end
+end
+
+
+local function _gen_req(args)
+    local req = {"*", #args, "\r\n"}
+
+    for i, arg in ipairs(args) do
+        if not arg then
+            insert(req, "$-1\r\n")
+        else
+            insert(req, "$")
+            insert(req, len(arg))
+            insert(req, "\r\n")
+            insert(req, arg)
+            insert(req, "\r\n")
+        end
+    end
+
+    return req
+end
+
+
+local function _do_cmd(self, ...)
+    local args = {...}
+
+    local sock = self.sock
+    if not sock then
+        return nil, "not initialized"
+    end
+
+    local req = _gen_req(args)
+
+    -- print("request: ", table.concat(req, ""))
+
+    local bytes, err = sock:send(req)
+    if not bytes then
+        return nil, err
+    end
+
+    return _read_reply(sock)
+end
+
+
+for i, cmd in ipairs(commands) do
+    resty.redis[cmd] =
+        function (self, ...)
+            return _do_cmd(self, cmd, ...)
+        end
 end
 
 
