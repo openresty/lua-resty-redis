@@ -66,9 +66,36 @@ Synopsis
 
                 ngx.say("dog: ", res)
 
+                red:init_pipeline()
+                red:set("cat", "Marry")
+                red:set("horse", "Bob")
+                red:get("cat")
+                red:get("horse")
+                local results, err = red:commit_pipeline()
+                if not results then
+                    ngx.say("failed to commit the pipelined requests: ", err)
+                    return
+                end
+
+                for i, res in ipairs(results) do
+                    if type(res) == "table" then
+                        if not res[1] then
+                            ngx.say("failed to run command ", i, ": ", res[2])
+                        else
+                            -- process the table value
+                        end
+                    else
+                        -- process the scalar value
+                    end
+                end
+
                 -- put it into the connection pool of size 100,
                 -- with 0 idle timeout
-                red:set_keepalive(0, 100)
+                local ok, err = red:set_keepalive(0, 100)
+                if not ok then
+                    ngx.say("failed to set keepalive: ", err)
+                    return
+                end
 
                 -- or just close the connection right away:
                 -- local ok, err = red:close()
@@ -157,7 +184,6 @@ get_reused_times
 
 This method returns the (successfully) reused times for the current connection. In case of error, it returns `nil` and a string describing the error.
 
-
 If the current connection does not come from the built-in connection pool, then this method always returns `0`, that is, the connection has never been reused (yet). If the connection comes from the connection pool, then the return value is always non-zero. So this method can also be used to determine if the current connection comes from the pool.
 
 close
@@ -167,6 +193,34 @@ close
 Closes the current redis connection and returns the status.
 
 In case of success, returns `1`. In case of errors, returns `nil` with a string describing the error.
+
+init_pipeline
+-------------
+`syntax: red:init_pipeline()`
+
+Enable the redis pipelining mode. All subsequent calls to Redis command methods will automatically get cached and will send to the server in one run when the `commit_pipeline` method is called or get cancelled by calling the `cancel_pipeline` method.
+
+This method always succeeds.
+
+If the redis object is already in the Redis pipelining mode, then calling this method will discard existing cached Redis queries.
+
+commit_pipeline
+---------------
+`syntax: results, err = red:commit_pipeline()`
+
+Quits the pipelining mode by committing all the cached Redis queries to the remote server in a single run. All the replies for these queries will be collected automatically and are returned as if a big multi-bulk reply at the highest level.
+
+This method returns `nil` and a Lua string describing the error upon failures.
+
+cancle_pipeline
+---------------
+`syntax: red:cancel_pipeline()`
+
+Quits the pipelining mode by discarding all existing cached Redis commands since the last call to the `init_pipeline` method.
+
+This method always succeeds.
+
+If the redis object is not in the Redis pipelining mode, then this method is a no-op.
 
 Debugging
 =========
@@ -179,11 +233,6 @@ It is usually convenient to use the [lua-cjson](http://www.kyne.com.au/~mark/sof
     if res then
         print("res: ", cjson.encode(res))
     end
-
-TODO
-====
-
-* implement the redis pipelining API.
 
 Author
 ======
