@@ -213,6 +213,12 @@ local function _do_cmd(self, ...)
 
     local req = _gen_req(args)
 
+    local reqs = self._reqs
+    if reqs then
+        insert(reqs, req)
+        return
+    end
+
     -- print("request: ", table.concat(req, ""))
 
     local bytes, err = sock:send(req)
@@ -229,6 +235,53 @@ for i, cmd in ipairs(commands) do
         function (self, ...)
             return _do_cmd(self, cmd, ...)
         end
+end
+
+
+function init_pipeline(self)
+    self._reqs = {}
+end
+
+
+function cancel_pipeline(self)
+    self._reqs = nil
+end
+
+
+function commit_pipeline(self)
+    local reqs = self._reqs
+    if not reqs then
+        return nil, "no pipeline"
+    end
+
+    self._reqs = nil
+
+    local sock = self.sock
+    if not sock then
+        return nil, "not initialized"
+    end
+
+    local bytes, err = sock:send(reqs)
+    if not bytes then
+        return nil, err
+    end
+
+    local vals = {}
+    for i = 1, #reqs do
+        local res, err = _read_reply(sock)
+        if res then
+            insert(vals, res)
+
+        elseif res == nil then
+            return nil, err
+
+        else
+            -- be a valid redis error value
+            insert(vals, {false, err})
+        end
+    end
+
+    return vals
 end
 
 
