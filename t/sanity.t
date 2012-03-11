@@ -615,6 +615,12 @@ reused times: 1
                 return
             end
 
+            ok, err = red:flushall()
+            if not ok then
+                ngx.say("failed to flush all: ", err)
+                return
+            end
+
             res, err = red:set("dog", "an animal")
             if not res then
                 ngx.say("failed to set dog: ", err)

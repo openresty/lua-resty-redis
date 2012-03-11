@@ -272,4 +272,6 @@ cmd 1: OK
 cmd 2: OK
 cmd 3: Marry
 cmd 4: Bob
+--- no_error_log
+[error]
 
