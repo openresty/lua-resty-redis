@@ -2,6 +2,7 @@
 
 module("resty.redis", package.seeall)
 
+_VERSION = '0.07'
 
 local commands = {
     "append",            "auth",              "bgrewriteaof",
@@ -44,7 +45,7 @@ local commands = {
     "zrange",            "zrangebyscore",     "zrank",
     "zrem",              "zremrangebyrank",   "zremrangebyscore",
     "zrevrange",         "zrevrangebyscore",  "zrevrank",
-    "zscore",            "zunionstore"
+    "zscore",            "zunionstore",       "evalsha"
 }
 
 

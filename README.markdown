@@ -180,7 +180,7 @@ In case of success, returns `1`. In case of errors, returns `nil` with a string 
 
 get_reused_times
 ----------------
-`syntax: red:set_keepalive(max_idle_timeout, pool_size)`
+`syntax: times, err = red:get_reused_times()`
 
 This method returns the (successfully) reused times for the current connection. In case of error, it returns `nil` and a string describing the error.
 
