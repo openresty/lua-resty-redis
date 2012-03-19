@@ -212,7 +212,7 @@ Quits the pipelining mode by committing all the cached Redis queries to the remo
 
 This method returns `nil` and a Lua string describing the error upon failures.
 
-cancle_pipeline
+cancel_pipeline
 ---------------
 `syntax: red:cancel_pipeline()`
 
