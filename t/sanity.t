@@ -504,8 +504,6 @@ no element popped.
             local redis = require "resty.redis"
             local red = redis:new()
 
-            red:set_timeout(200) -- 200 ms
-
             -- or connect to a unix domain socket file listened
             -- by a redis server:
             --     local ok, err = red:connect("unix:/path/to/redis.sock")
@@ -522,6 +520,8 @@ no element popped.
                 return
             end
             ngx.say("flushall: ", res)
+
+            red:set_timeout(200) -- 200 ms
 
             local res, err = red:blpop("key", 1)
             if err then
@@ -559,7 +559,7 @@ lua socket read timed out
             local redis = require "resty.redis"
             local red = redis:new()
 
-            red:set_timeout(100) -- 100 ms
+            red:set_timeout(1000) -- 1 sec
 
             local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
             if not ok then
