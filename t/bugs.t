@@ -20,6 +20,8 @@ $ENV{TEST_NGINX_REDIS_PORT} ||= 6379;
 no_long_string();
 #no_diff();
 
+log_level 'warn';
+
 run_tests();
 
 __DATA__
@@ -70,6 +72,64 @@ local res = ngx.location.capture("/anyurl") --3
     GET /r1
 --- response_body
 ok
+--- no_error_log
+[error]
+
+
+
+=== TEST 2: exit(404) after I/O (ngx_lua github issue #110
+https://github.com/chaoslawful/lua-nginx-module/issues/110
+--- http_config eval: $::HttpConfig
+--- config
+    location /foo {
+        access_by_lua '
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:set_timeout(1000) -- 1 sec
+
+            -- or connect to a unix domain socket file listened
+            -- by a redis server:
+            --     local ok, err = red:connect("unix:/path/to/redis.sock")
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.log(ngx.ERR, "failed to connect: ", err)
+                return
+            end
+
+            res, err = red:set("dog", "an animal")
+            if not res then
+                ngx.log(ngx.ERR, "failed to set dog: ", err)
+                return
+            end
+
+            -- ngx.say("set dog: ", res)
+
+            local res, err = red:get("dog")
+            if err then
+                ngx.log(ngx.ERR, "failed to get dog: ", err)
+                return
+            end
+
+            if not res then
+                -- ngx.say("dog not found.")
+                return
+            end
+
+            -- ngx.say("dog: ", res)
+
+            -- red:close()
+            red:set_keepalive()
+
+            ngx.exit(ngx.HTTP_NOT_FOUND)
+        ';
+        echo Hello;
+    }
+--- request
+    GET /foo
+--- response_body_like: 404 Not Found
+--- error_code: 404
 --- no_error_log
 [error]
 
