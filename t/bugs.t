@@ -20,7 +20,7 @@ $ENV{TEST_NGINX_REDIS_PORT} ||= 6379;
 no_long_string();
 #no_diff();
 
-log_level 'warn';
+#log_level 'warn';
 
 run_tests();
 
@@ -81,12 +81,16 @@ ok
 https://github.com/chaoslawful/lua-nginx-module/issues/110
 --- http_config eval: $::HttpConfig
 --- config
+    error_page 400 /400.html;
+    error_page 404 /404.html;
     location /foo {
         access_by_lua '
             local redis = require "resty.redis"
             local red = redis:new()
 
-            red:set_timeout(1000) -- 1 sec
+            red:set_timeout(2000) -- 2 sec
+
+            -- ngx.log(ngx.ERR, "hello");
 
             -- or connect to a unix domain socket file listened
             -- by a redis server:
@@ -113,22 +117,32 @@ https://github.com/chaoslawful/lua-nginx-module/issues/110
             end
 
             if not res then
-                -- ngx.say("dog not found.")
+                ngx.log(ngx.ERR, "dog not found.")
                 return
             end
 
             -- ngx.say("dog: ", res)
 
             -- red:close()
-            red:set_keepalive()
+            local ok, err = red:set_keepalive(0, 100)
+            if not ok then
+                ngx.log(ngx.ERR, "failed to set keepalive: ", err)
+                return
+            end
 
-            ngx.exit(ngx.HTTP_NOT_FOUND)
+            ngx.exit(404)
         ';
         echo Hello;
     }
+--- user_files
+>>> 400.html
+Bad request, dear...
+>>> 404.html
+Not found, dear...
 --- request
     GET /foo
---- response_body_like: 404 Not Found
+--- response_body
+Not found, dear...
 --- error_code: 404
 --- no_error_log
 [error]
