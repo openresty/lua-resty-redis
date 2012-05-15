@@ -6,9 +6,7 @@ lua-resty-redis - Lua redis client driver for the ngx_lua based on the cosocket 
 Status
 ======
 
-This library is considered experimental and still under active development.
-
-The API is still in flux and may change without notice.
+This library is considered production ready.
 
 Description
 ===========
@@ -20,7 +18,7 @@ http://wiki.nginx.org/HttpLuaModule
 This Lua library takes advantage of ngx_lua's cosocket API, which ensures
 100% nonblocking behavior.
 
-Note that at least [ngx_lua 0.5.0rc25](https://github.com/chaoslawful/lua-nginx-module/tags) or [ngx_openresty 1.0.15.1](http://openresty.org/#Download) is required.
+Note that at least [ngx_lua 0.5.0rc27](https://github.com/chaoslawful/lua-nginx-module/tags) or [ngx_openresty 1.0.15.3](http://openresty.org/#Download) is required.
 
 Synopsis
 ========
