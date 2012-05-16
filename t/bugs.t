@@ -147,3 +147,60 @@ Not found, dear...
 --- no_error_log
 [error]
 
+
+
+=== TEST 3: set and get an empty string
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:set_timeout(1000) -- 1 sec
+
+            -- or connect to a unix domain socket file listened
+            -- by a redis server:
+            --     local ok, err = red:connect("unix:/path/to/redis.sock")
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            res, err = red:set("dog", "")
+            if not res then
+                ngx.say("failed to set dog: ", err)
+                return
+            end
+
+            ngx.say("set dog: ", res)
+
+            for i = 1, 2 do
+                local res, err = red:get("dog")
+                if err then
+                    ngx.say("failed to get dog: ", err)
+                    return
+                end
+
+                if not res then
+                    ngx.say("dog not found.")
+                    return
+                end
+
+                ngx.say("dog: ", res)
+            end
+
+            red:close()
+        ';
+    }
+--- request
+GET /t
+--- response_body
+set dog: OK
+dog: 
+dog: 
+--- no_error_log
+[error]
+
