@@ -16,7 +16,7 @@ local commands = {
     "getrange",          "getset",            "hdel",
     "hexists",           "hget",              "hgetall",
     "hincrby",           "hkeys",             "hlen",
-    "hmget",             "hmset",             "hset",
+    "hmget",                                  "hset",
     "hsetnx",            "hvals",             "incr",
     "incrby",            "info",              "keys",
     "lastsave",          "lindex",            "linsert",
@@ -238,6 +238,24 @@ for i, cmd in ipairs(commands) do
         end
 end
 
+function resty.redis.hmset(self, ...)
+    local cmd = "hmset"
+    local args = {...}
+    if #args == 2 then
+        local t = args[2]
+        local array = {}
+        for k,v in pairs(t) do
+            insert(array, k)
+            insert(array, v)
+        end
+        -- args[1] is assumed to be the key
+        print("key", args[1])
+        return _do_cmd(self, cmd, args[1], unpack(array))
+    else
+        -- backwards compatibility
+        return _do_cmd(self, cmd, ...)
+    end
+end
 
 function init_pipeline(self)
     self._reqs = {}
