@@ -220,6 +220,17 @@ This method always succeeds.
 
 If the redis object is not in the Redis pipelining mode, then this method is a no-op.
 
+hmset
+-----
+`syntax: red:hmset(myhash, field1, value1, field2, value2, ...)`
+
+`syntax: red:hmset(myhash, { field1 = value1, field2 = value2, ... })`
+
+Special wrapper for the Redis "hmset" command.
+
+When there are only three arguments (including the "red" object
+itself), then the last argument must be a Lua table holding all the field/value pairs.
+
 Debugging
 =========
 
