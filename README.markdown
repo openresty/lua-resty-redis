@@ -243,6 +243,12 @@ It is usually convenient to use the [lua-cjson](http://www.kyne.com.au/~mark/sof
         print("res: ", cjson.encode(res))
     end
 
+Limitations
+===========
+
+* This library cannot be used in code contexts like set_by_lua*, log_by_lua*, and
+header_filter_by_lua* where the ngx_lua cosocket API is not available.
+
 Author
 ======
 
