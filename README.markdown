@@ -248,6 +248,14 @@ Limitations
 
 * This library cannot be used in code contexts like set_by_lua*, log_by_lua*, and
 header_filter_by_lua* where the ngx_lua cosocket API is not available.
+* The `resty.redis` object instance cannot be stored in a Lua variable at the Lua module level,
+because it will then be shared by all the concurrent requests handled by the same nginx
+ worker process (see
+http://wiki.nginx.org/HttpLuaModule#Data_Sharing_within_an_Nginx_Worker ) and
+result in bad race conditions when concurrent requests are trying to use the same `resty.redis` instance.
+You should always initiate `resty.redis` objects in function local
+variables or in the `ngx.ctx` table. These places all have their own data copies for
+each request.
 
 Author
 ======
