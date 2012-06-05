@@ -204,3 +204,42 @@ dog:
 --- no_error_log
 [error]
 
+
+
+=== TEST 4: ngx.exec() after red:get()
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:set_timeout(1000) -- 1 sec
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            local res, err = red:get("dog")
+            if err then
+                ngx.say("failed to get dog: ", err)
+                return
+            end
+
+            ngx.exec("/hello")
+        ';
+    }
+
+    location = /hello {
+        echo hello world;
+    }
+
+--- request
+    GET /t
+--- response_body
+hello world
+--- no_error_log
+[error]
+
