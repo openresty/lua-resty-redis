@@ -11,14 +11,14 @@ This library is considered production ready.
 Description
 ===========
 
-This Lua library is a redis client driver for the ngx_lua nginx module:
+This Lua library is a Redis client driver for the ngx_lua nginx module:
 
 http://wiki.nginx.org/HttpLuaModule
 
 This Lua library takes advantage of ngx_lua's cosocket API, which ensures
 100% nonblocking behavior.
 
-Note that at least [ngx_lua 0.5.0rc29](https://github.com/chaoslawful/lua-nginx-module/tags) or [ngx_openresty 1.0.15.7](http://openresty.org/#Download) is required.
+Note that at least [ngx_lua 0.5.3](https://github.com/chaoslawful/lua-nginx-module/tags) or [ngx_openresty 1.2.1.3](http://openresty.org/#Download) is required.
 
 Synopsis
 ========
