@@ -546,7 +546,7 @@ GET /t
 flushall: OK
 failed to blpop: timeout
 --- error_log
-lua socket read timed out
+lua tcp socket read timed out
 
 
 
