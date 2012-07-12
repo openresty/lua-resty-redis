@@ -2,7 +2,7 @@
 
 module("resty.redis", package.seeall)
 
-_VERSION = '0.10'
+_VERSION = '0.11'
 
 local commands = {
     "append",            "auth",              "bgrewriteaof",
