@@ -658,3 +658,74 @@ res: ["an animal",null,"an animal"]
 --- no_error_log
 [error]
 
+
+
+=== TEST 12: hmget array_to_hash
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:set_timeout(1000) -- 1 sec
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            ok, err = red:flushall()
+            if not ok then
+                ngx.say("failed to flush all: ", err)
+                return
+            end
+
+            res, err = red:hmset("animals", { dog = "bark", cat = "meow", cow = "moo" })
+            if not res then
+                ngx.say("failed to set animals: ", err)
+                return
+            end
+
+            ngx.say("hmset animals: ", res)
+
+            local res, err = red:hmget("animals", "dog", "cat", "cow")
+            if not res then
+                ngx.say("failed to get animals: ", err)
+                return
+            end
+
+            ngx.say("hmget animals: ", res)
+
+            local res, err = red:hgetall("animals")
+            if err then
+                ngx.say("failed to get animals: ", err)
+                return
+            end
+
+            if not res then
+                ngx.say("animals not found.")
+                return
+            end
+
+            local h = red:array_to_hash(res)
+
+            ngx.say("dog: ", h.dog)
+            ngx.say("cat: ", h.cat)
+            ngx.say("cow: ", h.cow)
+
+            red:close()
+        ';
+    }
+--- request
+GET /t
+--- response_body
+hmset animals: OK
+hmget animals: barkmeowmoo
+dog: bark
+cat: meow
+cow: moo
+--- no_error_log
+[error]
+

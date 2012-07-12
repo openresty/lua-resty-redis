@@ -305,6 +305,15 @@ function commit_pipeline(self)
 end
 
 
+function array_to_hash(self, t)
+    local h = {}
+    for i = 1, #t, 2 do
+        h[t[i]] = t[i + 1]
+    end
+    return h
+end
+
+
 -- to prevent use of casual module global variables
 getmetatable(resty.redis).__newindex = function (table, key, val)
     error('attempt to write to undeclared variable "' .. key .. '": '

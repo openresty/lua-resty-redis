@@ -231,6 +231,14 @@ Special wrapper for the Redis "hmset" command.
 When there are only three arguments (including the "red" object
 itself), then the last argument must be a Lua table holding all the field/value pairs.
 
+array_to_hash
+-------------
+`syntax: hash = red:array_to_hash(array)`
+
+Auxiliary function that converts an array-like Lua table into a hash-like table.
+
+This method was first introduced in the `v0.11` release.
+
 Debugging
 =========
 
