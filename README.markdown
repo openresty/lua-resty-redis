@@ -146,9 +146,9 @@ In addition to all those redis command methods, the following methods are also p
 
 new
 ---
-`syntax: red = redis:new()`
+`syntax: red, err = redis:new()`
 
-Creates a redis object. Returns `nil` on error.
+Creates a redis object. In case of failures, returns `nil` and a string describing the error.
 
 connect
 -------
