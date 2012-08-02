@@ -50,7 +50,8 @@ local commands = {
 }
 
 
-local mt = { __index = resty.redis }
+local class = resty.redis
+local mt = { __index = class }
 
 local sub = string.sub
 local tcp = ngx.socket.tcp
@@ -237,7 +238,7 @@ end
 
 
 for i, cmd in ipairs(commands) do
-    resty.redis[cmd] =
+    class[cmd] =
         function (self, ...)
             return _do_cmd(self, cmd, ...)
         end
@@ -319,7 +320,7 @@ end
 
 
 -- to prevent use of casual module global variables
-getmetatable(resty.redis).__newindex = function (table, key, val)
+getmetatable(class).__newindex = function (table, key, val)
     error('attempt to write to undeclared variable "' .. key .. '": '
             .. debug.traceback())
 end
