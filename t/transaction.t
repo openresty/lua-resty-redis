@@ -63,7 +63,11 @@ __DATA__
 
             ngx.say("exec ans: ", cjson.encode(ans))
 
-            red:close()
+            local ok, err = red:set_keepalive(0, 1024)
+            if not ok then
+                ngx.say("failed to put the current redis connection into pool: ", err)
+                return
+            end
         ';
     }
 --- request
