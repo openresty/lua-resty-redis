@@ -18,7 +18,7 @@ http://wiki.nginx.org/HttpLuaModule
 This Lua library takes advantage of ngx_lua's cosocket API, which ensures
 100% nonblocking behavior.
 
-Note that at least [ngx_lua 0.5.3](https://github.com/chaoslawful/lua-nginx-module/tags) or [ngx_openresty 1.2.1.3](http://openresty.org/#Download) is required.
+Note that at least [ngx_lua 0.5.14](https://github.com/chaoslawful/lua-nginx-module/tags) or [ngx_openresty 1.2.1.14](http://openresty.org/#Download) is required.
 
 Synopsis
 ========
@@ -270,10 +270,31 @@ TODO
 
 * add proper support for the Redis Pub/Sub API.
 
+Community
+=========
+
+English Mailing List
+--------------------
+
+The [openresty-en](https://groups.google.com/group/openresty-en) mailing list is for English speakers.
+
+Chinese Mailing List
+--------------------
+
+The [openresty](https://groups.google.com/group/openresty) mailing list is for Chinese speakers.
+
+Bugs and Patches
+================
+
+Please report bugs or submit patches by
+
+1. creating a ticket on the [GitHub Issue Tracker](http://github.com/agentzh/lua-resty-redis/issues),
+1. or posting to the [OpenResty community](http://wiki.nginx.org/HttpLuaModule#Community).
+
 Author
 ======
 
-Zhang "agentzh" Yichun (章亦春) <agentzh@gmail.com>
+Yichun "agentzh" Zhang (章亦春) <agentzh@gmail.com>
 
 Copyright and License
 =====================
