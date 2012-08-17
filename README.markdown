@@ -265,6 +265,11 @@ You should always initiate `resty.redis` objects in function local
 variables or in the `ngx.ctx` table. These places all have their own data copies for
 each request.
 
+TODO
+====
+
+* add proper support for the Redis Pub/Sub API.
+
 Author
 ======
 
