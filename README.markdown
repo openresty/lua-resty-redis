@@ -170,11 +170,13 @@ set_keepalive
 ------------
 `syntax: ok, err = red:set_keepalive(max_idle_timeout, pool_size)`
 
-Keeps the current redis connection alive and put it into the ngx_lua cosocket connection pool.
+Put the current Redis connection into the ngx_lua cosocket connection pool.
 
 You can specify the max idle timeout (in ms) when the connection is in the pool and the maximal size of the pool every nginx worker process.
 
 In case of success, returns `1`. In case of errors, returns `nil` with a string describing the error.
+
+Only call this method in the place you would have called the `close` method instead. Calling this method will immediately turn the current redis object into the `closed` state. Any subsequent operations on the current objet will return the `closed` error.
 
 get_reused_times
 ----------------
