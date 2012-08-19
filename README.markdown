@@ -243,7 +243,7 @@ read_reply
 ----------
 `syntax: res, err = red:read_reply()`
 
-Reading a reply from the redis server. This method is mostly useful for the Redis Pub/Sub API, for example,
+Reading a reply from the redis server. This method is mostly useful for the [Redis Pub/Sub API](http://redis.io/topics/pubsub/), for example,
 
     local cjson = require "cjson"
     local redis = require "resty.redis"
