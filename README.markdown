@@ -170,7 +170,7 @@ set_keepalive
 ------------
 `syntax: ok, err = red:set_keepalive(max_idle_timeout, pool_size)`
 
-Put the current Redis connection into the ngx_lua cosocket connection pool.
+Puts the current Redis connection into the ngx_lua cosocket connection pool.
 
 You can specify the max idle timeout (in ms) when the connection is in the pool and the maximal size of the pool every nginx worker process.
 
