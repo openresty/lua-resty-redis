@@ -299,6 +299,56 @@ Running this example gives the output like this:
     2: publish: 1
     1: receive: ["message","dog","Hello"]
 
+Redis Transactions
+==================
+
+This library supports the [Redis transactions](http://redis.io/topics/transactions/). Here is an example:
+
+    local cjson = require "cjson"
+    local redis = require "resty.redis"
+    local red = redis:new()
+
+    red:set_timeout(1000) -- 1 sec
+
+    local ok, err = red:connect("127.0.0.1", 6379)
+    if not ok then
+        ngx.say("failed to connect: ", err)
+        return
+    end
+
+    local ok, err = red:multi()
+    if not ok then
+        ngx.say("failed to run multi: ", err)
+        return
+    end
+    ngx.say("multi ans: ", cjson.encode(ok))
+
+    local ans, err = red:set("a", "abc")
+    if not ans then
+        ngx.say("failed to run sort: ", err)
+        return
+    end
+    ngx.say("set ans: ", cjson.encode(ans))
+
+    local ans, err = red:lpop("a")
+    if not ans then
+        ngx.say("failed to run sort: ", err)
+        return
+    end
+    ngx.say("set ans: ", cjson.encode(ans))
+
+    ans, err = red:exec()
+    ngx.say("exec ans: ", cjson.encode(ans))
+
+    red:close()
+
+Then the output will be
+
+    multi ans: "OK"
+    set ans: "QUEUED"
+    set ans: "QUEUED"
+    exec ans: ["OK",[false,"ERR Operation against a key holding the wrong kind of value"]]
+
 Debugging
 =========
 
