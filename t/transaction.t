@@ -98,8 +98,6 @@ exec ans: [{}]
                 return
             end
 
-            local redis_key = "foo"
-
             local ok, err = red:multi()
             if not ok then
                 ngx.say("failed to run multi: ", err)
