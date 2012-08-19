@@ -34,10 +34,6 @@ __DATA__
 
             red:set_timeout(1000) -- 1 sec
 
-            -- or connect to a unix domain socket file listened
-            -- by a redis server:
-            --     local ok, err = red:connect("unix:/path/to/redis.sock")
-
             local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
             if not ok then
                 ngx.say("failed to connect: ", err)
@@ -91,10 +87,6 @@ dog: an animal
 
             red:set_timeout(1000) -- 1 sec
 
-            -- or connect to a unix domain socket file listened
-            -- by a redis server:
-            --     local ok, err = red:connect("unix:/path/to/redis.sock")
-
             local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
             if not ok then
                 ngx.say("failed to connect: ", err)
@@ -129,10 +121,6 @@ flushall: OK
             local red = redis:new()
 
             red:set_timeout(1000) -- 1 sec
-
-            -- or connect to a unix domain socket file listened
-            -- by a redis server:
-            --     local ok, err = red:connect("unix:/path/to/redis.sock")
 
             local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
             if not ok then
@@ -184,10 +172,6 @@ not_found not found.
 
             red:set_timeout(1000) -- 1 sec
 
-            -- or connect to a unix domain socket file listened
-            -- by a redis server:
-            --     local ok, err = red:connect("unix:/path/to/redis.sock")
-
             local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
             if not ok then
                 ngx.say("failed to connect: ", err)
@@ -237,10 +221,6 @@ get nokey: 0 (table)
             local red = redis:new()
 
             red:set_timeout(1000) -- 1 sec
-
-            -- or connect to a unix domain socket file listened
-            -- by a redis server:
-            --     local ok, err = red:connect("unix:/path/to/redis.sock")
 
             local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
             if not ok then
@@ -347,10 +327,6 @@ connections: 1
 
             red:set_timeout(1000) -- 1 sec
 
-            -- or connect to a unix domain socket file listened
-            -- by a redis server:
-            --     local ok, err = red:connect("unix:/path/to/redis.sock")
-
             local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
             if not ok then
                 ngx.say("failed to connect: ", err)
@@ -386,10 +362,6 @@ failed to set connections: false: ERR wrong number of arguments for 'incr' comma
             local red = redis:new()
 
             red:set_timeout(1000) -- 1 sec
-
-            -- or connect to a unix domain socket file listened
-            -- by a redis server:
-            --     local ok, err = red:connect("unix:/path/to/redis.sock")
 
             local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
             if not ok then
@@ -451,10 +423,6 @@ lrange result: ["hello","world"]
 
             red:set_timeout(2500) -- 2.5 sec
 
-            -- or connect to a unix domain socket file listened
-            -- by a redis server:
-            --     local ok, err = red:connect("unix:/path/to/redis.sock")
-
             local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
             if not ok then
                 ngx.say("failed to connect: ", err)
@@ -503,10 +471,6 @@ no element popped.
         content_by_lua '
             local redis = require "resty.redis"
             local red = redis:new()
-
-            -- or connect to a unix domain socket file listened
-            -- by a redis server:
-            --     local ok, err = red:connect("unix:/path/to/redis.sock")
 
             local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
             if not ok then
@@ -605,10 +569,6 @@ reused times: 1
             local red = redis:new()
 
             red:set_timeout(1000) -- 1 sec
-
-            -- or connect to a unix domain socket file listened
-            -- by a redis server:
-            --     local ok, err = red:connect("unix:/path/to/redis.sock")
 
             local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
             if not ok then
