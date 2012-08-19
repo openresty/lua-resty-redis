@@ -329,9 +329,24 @@ function array_to_hash(self, t)
 end
 
 
+function add_commands(...)
+    local cmds = {...}
+    local mt = getmetatable(class)
+    local newindex = mt.__newindex
+    mt.__newindex = nil
+    for i = 1, #cmds do
+        local cmd = cmds[i]
+        class[cmd] =
+            function (self, ...)
+                return _do_cmd(self, cmd, ...)
+            end
+    end
+    mt.__newindex = newindex
+end
+
+
 -- to prevent use of casual module global variables
 getmetatable(class).__newindex = function (table, key, val)
-    error('attempt to write to undeclared variable "' .. key .. '": '
-            .. debug.traceback())
+    error('attempt to write to undeclared variable "' .. key .. '"')
 end
 

@@ -299,6 +299,38 @@ Running this example gives the output like this:
     2: publish: 1
     1: receive: ["message","dog","Hello"]
 
+The following class methods are provieded:
+
+add_commands
+------------
+`syntax: hash = redis.add_commands(cmd_name1, cmd_name2, ...)`
+
+Adds new redis commands to the `resty.redis` class. Here is an example:
+
+    local redis = require "resty.redis"
+
+    redis.add_commands("foo", "bar")
+
+    local red = redis:new()
+
+    red:set_timeout(1000) -- 1 sec
+
+    local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+    if not ok then
+        ngx.say("failed to connect: ", err)
+        return
+    end
+
+    local res, err = red:foo("a")
+    if not res then
+        ngx.say("failed to foo: ", err)
+    end
+
+    res, err = red:bar()
+    if not res then
+        ngx.say("failed to bar: ", err)
+    end
+
 Redis Transactions
 ==================
 
