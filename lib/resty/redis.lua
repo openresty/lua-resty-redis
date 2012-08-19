@@ -237,6 +237,16 @@ local function _do_cmd(self, ...)
 end
 
 
+function read_reply(self)
+    local sock = self.sock
+    if not sock then
+        return nil, "not initialized"
+    end
+
+    return _read_reply(sock)
+end
+
+
 for i, cmd in ipairs(commands) do
     class[cmd] =
         function (self, ...)

@@ -239,6 +239,66 @@ Auxiliary function that converts an array-like Lua table into a hash-like table.
 
 This method was first introduced in the `v0.11` release.
 
+read_reply
+----------
+`syntax: res, err = red:read_reply()`
+
+Reading a reply from the redis server. This method is mostly useful for the Redis Pub/Sub API, for example,
+
+    local cjson = require "cjson"
+    local redis = require "resty.redis"
+
+    local red = redis:new()
+    local red2 = redis:new()
+
+    red:set_timeout(1000) -- 1 sec
+    red2:set_timeout(1000) -- 1 sec
+
+    local ok, err = red:connect("127.0.0.1", 6379)
+    if not ok then
+        ngx.say("1: failed to connect: ", err)
+        return
+    end
+
+    ok, err = red2:connect("127.0.0.1", 6379)
+    if not ok then
+        ngx.say("2: failed to connect: ", err)
+        return
+    end
+
+    res, err = red:subscribe("dog")
+    if not res then
+        ngx.say("1: failed to subscribe: ", err)
+        return
+    end
+
+    ngx.say("1: subscribe: ", cjson.encode(res))
+
+    res, err = red2:publish("dog", "Hello")
+    if not res then
+        ngx.say("2: failed to publish: ", err)
+        return
+    end
+
+    ngx.say("2: publish: ", cjson.encode(res))
+
+    res, err = red:read_reply()
+    if not res then
+        ngx.say("1: failed to read reply: ", err)
+        return
+    end
+
+    ngx.say("1: receive: ", cjson.encode(res))
+
+    red:close()
+    red2:close()
+
+Running this example gives the output like this:
+
+    1: subscribe: ["subscribe","dog",1]
+    2: publish: 1
+    1: receive: ["message","dog","Hello"]
+
 Debugging
 =========
 
@@ -267,8 +327,6 @@ each request.
 
 TODO
 ====
-
-* add proper support for the Redis Pub/Sub API.
 
 Community
 =========
