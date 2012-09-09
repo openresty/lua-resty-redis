@@ -43,7 +43,7 @@ Synopsis
                     return
                 end
 
-                res, err = red:set("dog", "an aniaml")
+                ok, err = red:set("dog", "an aniaml")
                 if not ok then
                     ngx.say("failed to set dog: ", err)
                     return
