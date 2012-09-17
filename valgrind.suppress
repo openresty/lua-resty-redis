@@ -1,49 +1,4 @@
 {
-<insert_a_suppression_name_here>
-Memcheck:Param
-sendmsg(msg.msg_iov[0])
-fun:__sendmsg_nocancel
-fun:ngx_write_channel
-fun:ngx_pass_open_channel
-}
-{
-<insert_a_suppression_name_here>
-Memcheck:Param
-sendmsg(msg.msg_iov[0])
-fun:__sendmsg_nocancel
-fun:ngx_write_channel
-}
-{
-<insert_a_suppression_name_here>
-Memcheck:Param
-socketcall.sendmsg(msg.msg_iov[i])
-fun:sendmsg
-fun:ngx_write_channel
-fun:ngx_signal_worker_processes
-fun:ngx_master_process_cycle
-fun:main
-}
-{
-<insert_a_suppression_name_here>
-Memcheck:Param
-socketcall.sendmsg(msg.msg_iov[i])
-fun:__sendmsg_nocancel
-fun:ngx_write_channel
-fun:ngx_master_process_cycle
-fun:main
-}
-{
-<insert_a_suppression_name_here>
-Memcheck:Param
-socketcall.sendmsg(msg.msg_iov[i])
-fun:__sendmsg_nocancel
-fun:ngx_write_channel
-fun:ngx_pass_open_channel
-fun:ngx_start_worker_processes
-fun:ngx_master_process_cycle
-fun:main
-}
-{
    <insert_a_suppression_name_here>
    Memcheck:Cond
    fun:lj_str_new
@@ -395,16 +350,6 @@ fun:main
    fun:ngx_worker_process_cycle
    fun:ngx_spawn_process
    fun:ngx_start_worker_processes
-   fun:ngx_master_process_cycle
-   fun:main
-}
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Param
-   socketcall.sendmsg(msg.msg_iov[i])
-   fun:__sendmsg_nocancel
-   fun:ngx_write_channel
-   fun:ngx_signal_worker_processes
    fun:ngx_master_process_cycle
    fun:main
 }
