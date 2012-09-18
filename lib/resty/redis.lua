@@ -56,6 +56,7 @@ local mt = { __index = class }
 local sub = string.sub
 local tcp = ngx.socket.tcp
 local insert = table.insert
+local concat = table.concat
 local len = string.len
 local null = ngx.null
 
@@ -206,7 +207,8 @@ local function _gen_req(args)
         end
     end
 
-    return req
+    -- it is faster to do string concatenation on the Lua land
+    return concat(req, "")
 end
 
 
