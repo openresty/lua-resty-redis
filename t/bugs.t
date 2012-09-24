@@ -20,7 +20,7 @@ $ENV{TEST_NGINX_REDIS_PORT} ||= 6379;
 no_long_string();
 #no_diff();
 
-#log_level 'warn';
+log_level 'warn';
 
 run_tests();
 
@@ -58,8 +58,20 @@ __DATA__
 local redis = require "resty.redis"
 local red = redis:new()
 local ok, err = red:connect("127.0.0.1", ngx.var.port)
+if not ok then
+    ngx.say("failed to connect: ", err)
+    return
+end
 local ok, err = red:flushall()
-red:set_keepalive()
+if not ok then
+    ngx.say("failed to flushall: ", err)
+    return
+end
+ok, err = red:set_keepalive()
+if not ok then
+    ngx.say("failed to set keepalive: ", err)
+    return
+end
 local http_ress = ngx.location.capture("/r2") -- 1
 ngx.say("ok")
 
@@ -67,6 +79,10 @@ ngx.say("ok")
 local redis = require "resty.redis"
 local red = redis:new()
 local ok, err = red:connect("127.0.0.1", ngx.var.port) --2
+if not ok then
+    ngx.say("failed to connect: ", err)
+    return
+end
 local res = ngx.location.capture("/anyurl") --3
 --- request
     GET /r1
