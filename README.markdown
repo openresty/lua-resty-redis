@@ -49,7 +49,7 @@ Synopsis
                     return
                 end
 
-                ngx.say("set result: ", res)
+                ngx.say("set result: ", ok)
 
                 local res, err = red:get("dog")
                 if not res then
