@@ -1,6 +1,21 @@
--- Copyright (C) 2012 Zhang "agentzh" Yichun (章亦春)
+-- Copyright (C) 2012 Yichun Zhang (agentzh)
 
-module("resty.redis", package.seeall)
+
+local sub = string.sub
+local tcp = ngx.socket.tcp
+local insert = table.insert
+local concat = table.concat
+local len = string.len
+local null = ngx.null
+local ipairs = ipairs
+local pairs = pairs
+local unpack = unpack
+local setmetatable = setmetatable
+local tonumber = tonumber
+local error = error
+
+
+module(...)
 
 _VERSION = '0.14'
 
@@ -50,15 +65,7 @@ local commands = {
 }
 
 
-local class = resty.redis
-local mt = { __index = class }
-
-local sub = string.sub
-local tcp = ngx.socket.tcp
-local insert = table.insert
-local concat = table.concat
-local len = string.len
-local null = ngx.null
+local mt = { __index = _M }
 
 
 function new(self)
@@ -250,7 +257,7 @@ end
 
 
 for i, cmd in ipairs(commands) do
-    class[cmd] =
+    _M[cmd] =
         function (self, ...)
             return _do_cmd(self, cmd, ...)
         end
@@ -331,24 +338,28 @@ function array_to_hash(self, t)
 end
 
 
+local class_mt = {
+    -- to prevent use of casual module global variables
+    __newindex = function (table, key, val)
+        error('attempt to write to undeclared variable "' .. key .. '"')
+    end
+}
+
+
 function add_commands(...)
     local cmds = {...}
-    local mt = getmetatable(class)
-    local newindex = mt.__newindex
-    mt.__newindex = nil
+    local newindex = class_mt.__newindex
+    class_mt.__newindex = nil
     for i = 1, #cmds do
         local cmd = cmds[i]
-        class[cmd] =
+        _M[cmd] =
             function (self, ...)
                 return _do_cmd(self, cmd, ...)
             end
     end
-    mt.__newindex = newindex
+    class_mt.__newindex = newindex
 end
 
 
--- to prevent use of casual module global variables
-getmetatable(class).__newindex = function (table, key, val)
-    error('attempt to write to undeclared variable "' .. key .. '"')
-end
+setmetatable(_M, class_mt)
 
