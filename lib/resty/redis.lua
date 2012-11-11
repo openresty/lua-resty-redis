@@ -7,7 +7,6 @@ local insert = table.insert
 local concat = table.concat
 local len = string.len
 local null = ngx.null
-local ipairs = ipairs
 local pairs = pairs
 local unpack = unpack
 local setmetatable = setmetatable
@@ -202,9 +201,12 @@ end
 local function _gen_req(args)
     local req = {"*", #args, "\r\n"}
 
-    for i, arg in ipairs(args) do
+    for i = 1, #args do
+        local arg = args[i]
+
         if not arg then
             insert(req, "$-1\r\n")
+
         else
             insert(req, "$")
             insert(req, len(arg))
@@ -256,7 +258,9 @@ function read_reply(self)
 end
 
 
-for i, cmd in ipairs(commands) do
+for i = 1, #commands do
+    local cmd = commands[i]
+
     _M[cmd] =
         function (self, ...)
             return _do_cmd(self, cmd, ...)
@@ -269,7 +273,7 @@ function hmset(self, hashname, ...)
     if #args == 1 then
         local t = args[1]
         local array = {}
-        for k,v in pairs(t) do
+        for k, v in pairs(t) do
             insert(array, k)
             insert(array, v)
         end
