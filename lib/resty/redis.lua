@@ -16,7 +16,7 @@ local error = error
 
 module(...)
 
-_VERSION = '0.14'
+_VERSION = '0.15'
 
 local commands = {
     "append",            "auth",              "bgrewriteaof",
