@@ -152,13 +152,18 @@ Creates a redis object. In case of failures, returns `nil` and a string describi
 
 connect
 -------
-`syntax: ok, err = red:connect(host, port)`
+`syntax: ok, err = red:connect(host, port, options_table?)`
 
-`syntax: ok, err = red:connect("unix:/path/to/unix.sock")`
+`syntax: ok, err = red:connect("unix:/path/to/unix.sock", options_table?)`
 
 Attempts to connect to the remote host and port that the redis server is listening to or a local unix domain socket file listened by the redis server.
 
 Before actually resolving the host name and connecting to the remote backend, this method will always look up the connection pool for matched idle connections created by previous calls of this method.
+
+An optional Lua table can be specified as the last argument to this method to specify various connect options:
+
+* `pool`
+: Specifies a custom name for the connection pool being used. If omitted, then the connection pool name will be generated from the string template `<host>:<port>` or `<unix-socket-path>`.
 
 set_timeout
 ----------
