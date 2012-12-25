@@ -338,6 +338,41 @@ Adds new redis commands to the `resty.redis` class. Here is an example:
         ngx.say("failed to bar: ", err)
     end
 
+Redis Authentication
+====================
+
+Redis uses the `AUTH` command to do authentication: http://redis.io/commands/auth
+
+There is nothing special for this command as compared to other Redis
+commands like `GET` and `SET`. So one can just invoke the `auth` method on your `resty.redis` instance. Here is an example:
+
+    local redis = require "resty.redis"
+    local red = redis:new()
+
+    red:set_timeout(1000) -- 1 sec
+
+    local ok, err = red:connect("127.0.0.1", 6379)
+    if not ok then
+        ngx.say("failed to connect: ", err)
+        return
+    end
+
+    local res, err = red:auth("foobared")
+    if not res then
+        ngx.say("failed to authenticate: ", err)
+        return
+    end
+
+where we assume that the Redis server is configured with the
+password `foobared` in the `redis.conf` file:
+
+    requirepass foobared
+
+If the password specified is wrong, then the sample above will output the
+following to the HTTP client:
+
+    failed to authenticate: ERR invalid password
+
 Redis Transactions
 ==================
 
