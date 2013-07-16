@@ -126,6 +126,14 @@ Similarly, the "LRANGE" redis command accepts threee arguments, then you should 
 
 For example, "SET", "GET", "LRANGE", and "BLPOP" commands correspond to the methods "set", "get", "lrange", and "blpop".
 
+Here are some more examples:
+
+    -- HMGET myhash field1 field2 nofield
+    local res, err = red:hmget("myhash", "field1", "field2", "nofield")
+
+    -- HMSET myhash field1 "Hello" field2 "World"
+    local res, err = red:hmset("myhash", "field1", "Hello", "field2", "World")
+
 All these command methods returns a single result in success and `nil` otherwise. In case of errors or failures, it will also return a second value which is a string describing the error.
 
 A Redis "status reply" results in a string typed return value with the "+" prefix stripped.
