@@ -281,7 +281,7 @@ Reading a reply from the redis server. This method is mostly useful for the [Red
         return
     end
 
-    res, err = red:subscribe("dog")
+    local res, err = red:subscribe("dog")
     if not res then
         ngx.say("1: failed to subscribe: ", err)
         return
