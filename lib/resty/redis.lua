@@ -3,7 +3,7 @@
 
 local sub = string.sub
 local tcp = ngx.socket.tcp
-local insert = table.insert
+--local insert = table.insert
 local concat = table.concat
 local len = string.len
 local null = ngx.null
@@ -134,7 +134,34 @@ local function _read_reply(sock)
 
     local prefix = sub(line, 1, 1)
 
-    if prefix == "$" then
+    -- moved "*" to the top to reduce cpu cycles for huge multi-bulk replies
+    if prefix == "*" then
+        local n = tonumber(sub(line, 2))
+
+        -- print("multi-bulk reply: ", n)
+        if n < 0 then
+            return null
+        end
+
+        local vals = {};
+        for i = 1, n do
+            local res, err = _read_reply(sock)
+            if res then
+                --insert(vals, res)
+                vals[#vals+1] = res
+
+            elseif res == nil then
+                return nil, err
+
+            else
+                -- be a valid redis error value
+                --insert(vals, {false, err})
+                vals[#vals+1] = {false, err}
+            end
+        end
+        return vals
+
+    elseif prefix == "$" then
         -- print("bulk reply")
 
         local size = tonumber(sub(line, 2))
@@ -159,30 +186,6 @@ local function _read_reply(sock)
 
         return sub(line, 2)
 
-    elseif prefix == "*" then
-        local n = tonumber(sub(line, 2))
-
-        -- print("multi-bulk reply: ", n)
-        if n < 0 then
-            return null
-        end
-
-        local vals = {};
-        for i = 1, n do
-            local res, err = _read_reply(sock)
-            if res then
-                insert(vals, res)
-
-            elseif res == nil then
-                return nil, err
-
-            else
-                -- be a valid redis error value
-                insert(vals, {false, err})
-            end
-        end
-        return vals
-
     elseif prefix == ":" then
         -- print("integer reply")
         return tonumber(sub(line, 2))
@@ -205,14 +208,20 @@ local function _gen_req(args)
         local arg = args[i]
 
         if not arg then
-            insert(req, "$-1\r\n")
+            --insert(req, "$-1\r\n")
+            req[#req+1] = "$-1\r\n"
 
         else
-            insert(req, "$")
-            insert(req, len(arg))
-            insert(req, "\r\n")
-            insert(req, arg)
-            insert(req, "\r\n")
+            --insert(req, "$")
+            --insert(req, len(arg))
+            --insert(req, "\r\n")
+            --insert(req, arg)
+            --insert(req, "\r\n")
+            req[#req+1] = "$"
+            req[#req+1] = len(arg)
+            req[#req+1] = "\r\n"
+            req[#req+1] = arg
+            req[#req+1] = "\r\n"
         end
     end
 
@@ -233,7 +242,8 @@ local function _do_cmd(self, ...)
 
     local reqs = self._reqs
     if reqs then
-        insert(reqs, req)
+        --insert(reqs, req)
+        reqs[#reqs+1] = req
         return
     end
 
@@ -274,8 +284,10 @@ function hmset(self, hashname, ...)
         local t = args[1]
         local array = {}
         for k, v in pairs(t) do
-            insert(array, k)
-            insert(array, v)
+            --insert(array, k)
+            --insert(array, v)
+            array[#array+1] = k
+            array[#array+1] = v
         end
         -- print("key", hashname)
         return _do_cmd(self, "hmset", hashname, unpack(array))
@@ -318,14 +330,16 @@ function commit_pipeline(self)
     for i = 1, #reqs do
         local res, err = _read_reply(sock)
         if res then
-            insert(vals, res)
+            --insert(vals, res)
+            vals[#vals+1] = res
 
         elseif res == nil then
             return nil, err
 
         else
             -- be a valid redis error value
-            insert(vals, {false, err})
+            --insert(vals, {false, err})
+            vals[#vals+1] = {false, err}
         end
     end
 
