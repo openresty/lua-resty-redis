@@ -60,7 +60,14 @@ local commands = {
     "zrange",            "zrangebyscore",     "zrank",
     "zrem",              "zremrangebyrank",   "zremrangebyscore",
     "zrevrange",         "zrevrangebyscore",  "zrevrank",
-    "zscore",            "zunionstore",       "evalsha"
+    "zscore",            "zunionstore",       "evalsha",
+    -- Command list updated to Redis 2.6.16
+    "bitcount",          "bitop",             "client",
+    "dump",              "hincrbyfloat",      "incrbyfloat",
+    "migrate",           "pexpire",           "pexpireat",
+    "psetex",            "pubsub",            "pttl",
+    "restore",           "time"
+
 }
 
 
