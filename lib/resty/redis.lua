@@ -134,8 +134,27 @@ local function _read_reply(sock)
 
     local prefix = sub(line, 1, 1)
 
-    -- moved "*" to the top to reduce cpu cycles for huge multi-bulk replies
-    if prefix == "*" then
+    if prefix == "$" then
+        -- print("bulk reply")
+
+        local size = tonumber(sub(line, 2))
+        if size < 0 then
+            return null
+        end
+
+        local data, err = sock:receive(size)
+        if not data then
+            return nil, err
+        end
+
+        local dummy, err = sock:receive(2) -- ignore CRLF
+        if not dummy then
+            return nil, err
+        end
+
+        return data
+    
+    elseif prefix == "*" then
         local n = tonumber(sub(line, 2))
 
         -- print("multi-bulk reply: ", n)
@@ -161,26 +180,6 @@ local function _read_reply(sock)
             end
         end
         return vals
-
-    elseif prefix == "$" then
-        -- print("bulk reply")
-
-        local size = tonumber(sub(line, 2))
-        if size < 0 then
-            return null
-        end
-
-        local data, err = sock:receive(size)
-        if not data then
-            return nil, err
-        end
-
-        local dummy, err = sock:receive(2) -- ignore CRLF
-        if not dummy then
-            return nil, err
-        end
-
-        return data
 
     elseif prefix == "+" then
         -- print("status reply")
