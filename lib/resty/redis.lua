@@ -144,19 +144,20 @@ local function _read_reply(sock)
         end
 
         local vals = {};
+        local nvals = 0
         for i = 1, n do
             local res, err = _read_reply(sock)
             if res then
-                --insert(vals, res)
-                vals[#vals+1] = res
+                nvals = nvals + 1
+                vals[nvals] = res
 
             elseif res == nil then
                 return nil, err
 
             else
                 -- be a valid redis error value
-                --insert(vals, {false, err})
-                vals[#vals+1] = {false, err}
+                nvals = nvals + 1
+                vals[nvals] = {false, err}
             end
         end
         return vals
@@ -202,26 +203,28 @@ end
 
 
 local function _gen_req(args)
-    local req = {"*", #args, "\r\n"}
+    local nargs = #args
+    local req = {"*", nargs, "\r\n"}
+    local nreq = 3
 
-    for i = 1, #args do
+    for i = 1, nargs do
         local arg = args[i]
 
         if not arg then
-            --insert(req, "$-1\r\n")
-            req[#req+1] = "$-1\r\n"
+            nreq = nreq + 1
+            req[nreq] = "$-1\r\n"
 
         else
-            --insert(req, "$")
-            --insert(req, len(arg))
-            --insert(req, "\r\n")
-            --insert(req, arg)
-            --insert(req, "\r\n")
-            req[#req+1] = "$"
-            req[#req+1] = len(arg)
-            req[#req+1] = "\r\n"
-            req[#req+1] = arg
-            req[#req+1] = "\r\n"
+            nreq = nreq + 1
+            req[nreq] = "$"
+            nreq = nreq + 1            
+            req[nreq] = len(arg)
+            nreq = nreq + 1
+            req[nreq] = "\r\n"
+            nreq = nreq + 1            
+            req[nreq] = arg
+            nreq = nreq + 1            
+            req[nreq] = "\r\n"
         end
     end
 
@@ -242,7 +245,6 @@ local function _do_cmd(self, ...)
 
     local reqs = self._reqs
     if reqs then
-        --insert(reqs, req)
         reqs[#reqs+1] = req
         return
     end
@@ -283,11 +285,12 @@ function hmset(self, hashname, ...)
     if #args == 1 then
         local t = args[1]
         local array = {}
+        local narray = 0
         for k, v in pairs(t) do
-            --insert(array, k)
-            --insert(array, v)
-            array[#array+1] = k
-            array[#array+1] = v
+            narray = narray + 1
+            array[narray] = k
+            narray = narray + 1            
+            array[narray] = v
         end
         -- print("key", hashname)
         return _do_cmd(self, "hmset", hashname, unpack(array))
@@ -327,19 +330,20 @@ function commit_pipeline(self)
     end
 
     local vals = {}
+    local nvals = 0
     for i = 1, #reqs do
         local res, err = _read_reply(sock)
         if res then
-            --insert(vals, res)
-            vals[#vals+1] = res
+            nvals = nvals + 1
+            vals[nvals] = res
 
         elseif res == nil then
             return nil, err
 
         else
             -- be a valid redis error value
-            --insert(vals, {false, err})
-            vals[#vals+1] = {false, err}
+            nvals = nvals + 1
+            vals[nvals] = {false, err}
         end
     end
 
