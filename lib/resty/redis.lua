@@ -1,4 +1,4 @@
--- Copyright (C) 2012 Yichun Zhang (agentzh)
+-- Copyright (C) 2013 Yichun Zhang (agentzh)
 
 
 local sub = string.sub
@@ -228,7 +228,7 @@ local function _gen_req(args)
     end
 
     -- it is faster to do string concatenation on the Lua land
-    return concat(req, "")
+    return concat(req)
 end
 
 
