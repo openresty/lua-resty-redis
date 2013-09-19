@@ -1,4 +1,4 @@
--- Copyright (C) 2012 Yichun Zhang (agentzh)
+-- Copyright (C) 2012-2013 Yichun Zhang (agentzh), CloudFlare Inc.
 
 
 local sub = string.sub
