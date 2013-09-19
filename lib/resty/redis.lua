@@ -1,9 +1,9 @@
--- Copyright (C) 2012 Yichun Zhang (agentzh)
+-- Copyright (C) 2013 Yichun Zhang (agentzh)
 
 
 local sub = string.sub
 local tcp = ngx.socket.tcp
-local insert = table.insert
+--local insert = table.insert
 local concat = table.concat
 local len = string.len
 local null = ngx.null
@@ -60,7 +60,14 @@ local commands = {
     "zrange",            "zrangebyscore",     "zrank",
     "zrem",              "zremrangebyrank",   "zremrangebyscore",
     "zrevrange",         "zrevrangebyscore",  "zrevrank",
-    "zscore",            "zunionstore",       "evalsha"
+    "zscore",            "zunionstore",       "evalsha",
+    -- Command list updated to Redis 2.6.16
+    "bitcount",          "bitop",             "client",
+    "dump",              "hincrbyfloat",      "incrbyfloat",
+    "migrate",           "pexpire",           "pexpireat",
+    "psetex",            "pubsub",            "pttl",
+    "restore",           "time"
+
 }
 
 
@@ -153,12 +160,7 @@ local function _read_reply(sock)
         end
 
         return data
-
-    elseif prefix == "+" then
-        -- print("status reply")
-
-        return sub(line, 2)
-
+    
     elseif prefix == "*" then
         local n = tonumber(sub(line, 2))
 
@@ -168,20 +170,28 @@ local function _read_reply(sock)
         end
 
         local vals = {};
+        local nvals = 0
         for i = 1, n do
             local res, err = _read_reply(sock)
             if res then
-                insert(vals, res)
+                nvals = nvals + 1
+                vals[nvals] = res
 
             elseif res == nil then
                 return nil, err
 
             else
                 -- be a valid redis error value
-                insert(vals, {false, err})
+                nvals = nvals + 1
+                vals[nvals] = {false, err}
             end
         end
         return vals
+
+    elseif prefix == "+" then
+        -- print("status reply")
+
+        return sub(line, 2)
 
     elseif prefix == ":" then
         -- print("integer reply")
@@ -199,25 +209,33 @@ end
 
 
 local function _gen_req(args)
-    local req = {"*", #args, "\r\n"}
+    local nargs = #args
+    local req = {"*", nargs, "\r\n"}
+    local nreq = 3
 
-    for i = 1, #args do
+    for i = 1, nargs do
         local arg = args[i]
 
         if not arg then
-            insert(req, "$-1\r\n")
+            nreq = nreq + 1
+            req[nreq] = "$-1\r\n"
 
         else
-            insert(req, "$")
-            insert(req, len(arg))
-            insert(req, "\r\n")
-            insert(req, arg)
-            insert(req, "\r\n")
+            nreq = nreq + 1
+            req[nreq] = "$"
+            nreq = nreq + 1            
+            req[nreq] = len(arg)
+            nreq = nreq + 1
+            req[nreq] = "\r\n"
+            nreq = nreq + 1            
+            req[nreq] = arg
+            nreq = nreq + 1            
+            req[nreq] = "\r\n"
         end
     end
 
     -- it is faster to do string concatenation on the Lua land
-    return concat(req, "")
+    return concat(req)
 end
 
 
@@ -233,7 +251,7 @@ local function _do_cmd(self, ...)
 
     local reqs = self._reqs
     if reqs then
-        insert(reqs, req)
+        reqs[#reqs+1] = req
         return
     end
 
@@ -273,9 +291,12 @@ function _M.hmset(self, hashname, ...)
     if #args == 1 then
         local t = args[1]
         local array = {}
+        local narray = 0
         for k, v in pairs(t) do
-            insert(array, k)
-            insert(array, v)
+            narray = narray + 1
+            array[narray] = k
+            narray = narray + 1            
+            array[narray] = v
         end
         -- print("key", hashname)
         return _do_cmd(self, "hmset", hashname, unpack(array))
@@ -315,17 +336,20 @@ function _M.commit_pipeline(self)
     end
 
     local vals = {}
+    local nvals = 0
     for i = 1, #reqs do
         local res, err = _read_reply(sock)
         if res then
-            insert(vals, res)
+            nvals = nvals + 1
+            vals[nvals] = res
 
         elseif res == nil then
             return nil, err
 
         else
             -- be a valid redis error value
-            insert(vals, {false, err})
+            nvals = nvals + 1
+            vals[nvals] = {false, err}
         end
     end
 
