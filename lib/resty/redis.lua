@@ -14,9 +14,9 @@ local tonumber = tonumber
 local error = error
 
 
-module(...)
-
-_VERSION = '0.15'
+local _M = {
+    _VERSION = '0.15'
+}
 
 local commands = {
     "append",            "auth",              "bgrewriteaof",
@@ -67,7 +67,7 @@ local commands = {
 local mt = { __index = _M }
 
 
-function new(self)
+function _M.new(self)
     local sock, err = tcp()
     if not sock then
         return nil, err
@@ -76,7 +76,7 @@ function new(self)
 end
 
 
-function set_timeout(self, timeout)
+function _M.set_timeout(self, timeout)
     local sock = self.sock
     if not sock then
         return nil, "not initialized"
@@ -86,7 +86,7 @@ function set_timeout(self, timeout)
 end
 
 
-function connect(self, ...)
+function _M.connect(self, ...)
     local sock = self.sock
     if not sock then
         return nil, "not initialized"
@@ -96,7 +96,7 @@ function connect(self, ...)
 end
 
 
-function set_keepalive(self, ...)
+function _M.set_keepalive(self, ...)
     local sock = self.sock
     if not sock then
         return nil, "not initialized"
@@ -106,7 +106,7 @@ function set_keepalive(self, ...)
 end
 
 
-function get_reused_times(self)
+function _M.get_reused_times(self)
     local sock = self.sock
     if not sock then
         return nil, "not initialized"
@@ -116,7 +116,7 @@ function get_reused_times(self)
 end
 
 
-function close(self)
+function _M.close(self)
     local sock = self.sock
     if not sock then
         return nil, "not initialized"
@@ -248,7 +248,7 @@ local function _do_cmd(self, ...)
 end
 
 
-function read_reply(self)
+function _M.read_reply(self)
     local sock = self.sock
     if not sock then
         return nil, "not initialized"
@@ -268,7 +268,7 @@ for i = 1, #commands do
 end
 
 
-function hmset(self, hashname, ...)
+function _M.hmset(self, hashname, ...)
     local args = {...}
     if #args == 1 then
         local t = args[1]
@@ -286,17 +286,17 @@ function hmset(self, hashname, ...)
 end
 
 
-function init_pipeline(self)
+function _M.init_pipeline(self)
     self._reqs = {}
 end
 
 
-function cancel_pipeline(self)
+function _M.cancel_pipeline(self)
     self._reqs = nil
 end
 
 
-function commit_pipeline(self)
+function _M.commit_pipeline(self)
     local reqs = self._reqs
     if not reqs then
         return nil, "no pipeline"
@@ -333,7 +333,7 @@ function commit_pipeline(self)
 end
 
 
-function array_to_hash(self, t)
+function _M.array_to_hash(self, t)
     local h = {}
     for i = 1, #t, 2 do
         h[t[i]] = t[i + 1]
@@ -342,18 +342,8 @@ function array_to_hash(self, t)
 end
 
 
-local class_mt = {
-    -- to prevent use of casual module global variables
-    __newindex = function (table, key, val)
-        error('attempt to write to undeclared variable "' .. key .. '"')
-    end
-}
-
-
-function add_commands(...)
+function _M.add_commands(...)
     local cmds = {...}
-    local newindex = class_mt.__newindex
-    class_mt.__newindex = nil
     for i = 1, #cmds do
         local cmd = cmds[i]
         _M[cmd] =
@@ -361,9 +351,7 @@ function add_commands(...)
                 return _do_cmd(self, cmd, ...)
             end
     end
-    class_mt.__newindex = newindex
 end
 
 
-setmetatable(_M, class_mt)
-
+return _M
