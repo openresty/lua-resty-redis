@@ -88,8 +88,8 @@ Synopsis
                 end
 
                 -- put it into the connection pool of size 100,
-                -- with 0 idle timeout
-                local ok, err = red:set_keepalive(0, 100)
+                -- with 10 seconds max idle time
+                local ok, err = red:set_keepalive(10000, 100)
                 if not ok then
                     ngx.say("failed to set keepalive: ", err)
                     return
