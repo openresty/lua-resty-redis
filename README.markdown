@@ -431,6 +431,13 @@ Then the output will be
     set ans: "QUEUED"
     exec ans: ["OK",[false,"ERR Operation against a key holding the wrong kind of value"]]
 
+Load Balancing and Failover
+===========================
+
+You can trivially implement your own Redis load balancing logic yourself in Lua. Just keep a Lua table of all available Redis backend information (like host name and port numbers) and pick one server according to some rule (like round-robin or key-based hashing) from the Lua table at every request. You can keep track of the current rule state in your own Lua module's data, see http://wiki.nginx.org/HttpLuaModule#Data_Sharing_within_an_Nginx_Worker
+
+Similarly, you can implement automatic failover logic in Lua at great flexibility.
+
 Debugging
 =========
 
