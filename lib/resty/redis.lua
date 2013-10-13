@@ -4,7 +4,6 @@
 local sub = string.sub
 local tcp = ngx.socket.tcp
 local concat = table.concat
-local len = string.len
 local null = ngx.null
 local pairs = pairs
 local unpack = unpack
@@ -13,9 +12,15 @@ local tonumber = tonumber
 local error = error
 
 
-local _M = {
-    _VERSION = '0.16'
-}
+local ok, new_tab = pcall(require, "table.new")
+if not ok then
+    new_tab = function (narr, nrec) return {} end
+end
+
+
+local _M = new_tab(0, 151)
+_M._VERSION = '0.16'
+
 
 local commands = {
     "append",            "auth",              "bgrewriteaof",
@@ -177,7 +182,7 @@ local function _read_reply(sock)
             return null
         end
 
-        local vals = {};
+        local vals = new_tab(n, 0);
         local nvals = 0
         for i = 1, n do
             local res, err = _read_reply(sock)
@@ -212,24 +217,24 @@ end
 
 
 local function _gen_req(args)
-    local req = {"*", #args, "\r\n"}
-    local nbits = #req
     local nargs = #args
+
+    local req = new_tab(nargs + 1, 0)
+    req[1] = "*" .. nargs .. "\r\n"
+    local nbits = 1
 
     for i = 1, nargs do
         local arg = args[i]
+        nbits = nbits + 1
 
         if not arg then
-            nbits = nbits + 1
             req[nbits] = "$-1\r\n"
 
         else
-            req[nbits + 1] = "$"
-            req[nbits + 2] = len(arg)
-            req[nbits + 3] = "\r\n"
-            req[nbits + 4] = arg
-            req[nbits + 5] = "\r\n"
-            nbits = nbits + 5
+            if type(arg) ~= "string" then
+                arg = tostring(arg)
+            end
+            req[nbits] = "$" .. #arg .. "\r\n" .. arg .. "\r\n"
         end
     end
 
@@ -289,12 +294,19 @@ function _M.hmset(self, hashname, ...)
     local args = {...}
     if #args == 1 then
         local t = args[1]
-        local array = {}
+
         local n = 0
         for k, v in pairs(t) do
-            array[n + 1] = k
-            array[n + 2] = v
             n = n + 2
+        end
+
+        local array = new_tab(n, 0)
+
+        local i = 0
+        for k, v in pairs(t) do
+            array[i + 1] = k
+            array[i + 2] = v
+            i = i + 2
         end
         -- print("key", hashname)
         return _do_cmd(self, "hmset", hashname, unpack(array))
@@ -305,8 +317,8 @@ function _M.hmset(self, hashname, ...)
 end
 
 
-function _M.init_pipeline(self)
-    self._reqs = {}
+function _M.init_pipeline(self, n)
+    self._reqs = new_tab(n or 4, 0)
 end
 
 
@@ -333,9 +345,9 @@ function _M.commit_pipeline(self)
         return nil, err
     end
 
-    local vals = {}
     local nvals = 0
     local nreqs = #reqs
+    local vals = new_tab(nreqs, 0)
     for i = 1, nreqs do
         local res, err = _read_reply(sock)
         if res then
@@ -357,8 +369,10 @@ end
 
 
 function _M.array_to_hash(self, t)
-    local h = {}
-    for i = 1, #t, 2 do
+    local n = #t
+    -- print("n = ", n)
+    local h = new_tab(0, n / 2)
+    for i = 1, n, 2 do
         h[t[i]] = t[i + 1]
     end
     return h
