@@ -23,6 +23,8 @@ Note that at least [ngx_lua 0.5.14](https://github.com/chaoslawful/lua-nginx-mod
 Synopsis
 ========
 
+    # you do not need the following line if you are using
+    # the ngx_openresty bundle:
     lua_package_path "/path/to/lua-resty-redis/lib/?.lua;;";
 
     server {
@@ -477,14 +479,14 @@ Installation
 ============
 
 If you are using the ngx_openresty bundle (http://openresty.org ), then
-you don't need to do anything because it already includes and enables
+you do not need to do anything because it already includes and enables
 lua-resty-redis by default. And you can just use it in your Lua code,
 as in
 
     local redis = require "resty.redis"
     ...
 
-If you're using your own nginx + ngx_lua build, then you need to configure
+If you are using your own nginx + ngx_lua build, then you need to configure
 the lua_package_path directive to add the path of your lua-resty-redis source
 tree to ngx_lua's LUA_PATH search path, as in
 
@@ -493,6 +495,9 @@ tree to ngx_lua's LUA_PATH search path, as in
         lua_package_path "/path/to/lua-resty-redis/lib/?.lua;;";
         ...
     }
+
+Ensure that the system account running your Nginx ''worker'' proceses have
+enough permission to read the `.lua` file.
 
 TODO
 ====
