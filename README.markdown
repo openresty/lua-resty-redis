@@ -23,6 +23,7 @@ Note that at least [ngx_lua 0.5.14](https://github.com/chaoslawful/lua-nginx-mod
 Synopsis
 ========
 
+```lua
     # you do not need the following line if you are using
     # the ngx_openresty bundle:
     lua_package_path "/path/to/lua-resty-redis/lib/?.lua;;";
@@ -106,6 +107,7 @@ Synopsis
             ';
         }
     }
+```
 
 Methods
 =======
@@ -120,21 +122,29 @@ You need to check out this Redis command reference to see what Redis command acc
 
 The Redis command arguments can be directly fed into the corresponding method call. For example, the "GET" redis command accepts a single key argument, then you can just call the "get" method like this:
 
+```lua
     local res, err = red:get("key")
+```
 
 Similarly, the "LRANGE" redis command accepts threee arguments, then you should call the "lrange" method like this:
 
+```lua
     local res, err = red:lrange("nokey", 0, 1)
+```
 
 For example, "SET", "GET", "LRANGE", and "BLPOP" commands correspond to the methods "set", "get", "lrange", and "blpop".
 
 Here are some more examples:
 
+```lua
     -- HMGET myhash field1 field2 nofield
     local res, err = red:hmget("myhash", "field1", "field2", "nofield")
+```
 
+```lua
     -- HMSET myhash field1 "Hello" field2 "World"
     local res, err = red:hmset("myhash", "field1", "Hello", "field2", "World")
+```
 
 All these command methods returns a single result in success and `nil` otherwise. In case of errors or failures, it will also return a second value which is a string describing the error.
 
@@ -173,7 +183,7 @@ Before actually resolving the host name and connecting to the remote backend, th
 An optional Lua table can be specified as the last argument to this method to specify various connect options:
 
 * `pool`
-: Specifies a custom name for the connection pool being used. If omitted, then the connection pool name will be generated from the string template `<host>:<port>` or `<unix-socket-path>`.
+    Specifies a custom name for the connection pool being used. If omitted, then the connection pool name will be generated from the string template `<host>:<port>` or `<unix-socket-path>`.
 
 set_timeout
 ----------
@@ -262,6 +272,7 @@ read_reply
 
 Reading a reply from the redis server. This method is mostly useful for the [Redis Pub/Sub API](http://redis.io/topics/pubsub/), for example,
 
+```lua
     local cjson = require "cjson"
     local redis = require "resty.redis"
 
@@ -309,6 +320,7 @@ Reading a reply from the redis server. This method is mostly useful for the [Red
 
     red:close()
     red2:close()
+```
 
 Running this example gives the output like this:
 
@@ -324,6 +336,7 @@ add_commands
 
 Adds new redis commands to the `resty.redis` class. Here is an example:
 
+```lua
     local redis = require "resty.redis"
 
     redis.add_commands("foo", "bar")
@@ -347,6 +360,7 @@ Adds new redis commands to the `resty.redis` class. Here is an example:
     if not res then
         ngx.say("failed to bar: ", err)
     end
+```
 
 Redis Authentication
 ====================
@@ -356,6 +370,7 @@ Redis uses the `AUTH` command to do authentication: http://redis.io/commands/aut
 There is nothing special for this command as compared to other Redis
 commands like `GET` and `SET`. So one can just invoke the `auth` method on your `resty.redis` instance. Here is an example:
 
+```lua
     local redis = require "resty.redis"
     local red = redis:new()
 
@@ -372,6 +387,7 @@ commands like `GET` and `SET`. So one can just invoke the `auth` method on your 
         ngx.say("failed to authenticate: ", err)
         return
     end
+```
 
 where we assume that the Redis server is configured with the
 password `foobared` in the `redis.conf` file:
@@ -388,6 +404,7 @@ Redis Transactions
 
 This library supports the [Redis transactions](http://redis.io/topics/transactions/). Here is an example:
 
+```lua
     local cjson = require "cjson"
     local redis = require "resty.redis"
     local red = redis:new()
@@ -425,6 +442,7 @@ This library supports the [Redis transactions](http://redis.io/topics/transactio
     ngx.say("exec ans: ", cjson.encode(ans))
 
     red:close()
+```
 
 Then the output will be
 
@@ -445,12 +463,14 @@ Debugging
 
 It is usually convenient to use the [lua-cjson](http://www.kyne.com.au/~mark/software/lua-cjson.php) library to encode the return values of the redis command methods to JSON. For example,
 
+```lua
     local cjson = require "cjson"
     ...
     local res, err = red:mget("h1234", "h5678")
     if res then
         print("res: ", cjson.encode(res))
     end
+```
 
 Automatic Error Logging
 =======================
@@ -459,7 +479,9 @@ By default the underlying [ngx_lua](http://wiki.nginx.org/HttpLuaModule) module
 does error logging when socket errors happen. If you are already doing proper error
 handling in your own Lua code, then you are recommended to disable this automatic error logging by turning off [ngx_lua](http://wiki.nginx.org/HttpLuaModule)'s [lua_socket_log_errors](http://wiki.nginx.org/HttpLuaModule#lua_socket_log_errors) directive, that is,
 
+```nginx
     lua_socket_log_errors off;
+```
 
 Limitations
 ===========
@@ -483,18 +505,22 @@ you do not need to do anything because it already includes and enables
 lua-resty-redis by default. And you can just use it in your Lua code,
 as in
 
+```lua
     local redis = require "resty.redis"
     ...
+```
 
 If you are using your own nginx + ngx_lua build, then you need to configure
 the lua_package_path directive to add the path of your lua-resty-redis source
 tree to ngx_lua's LUA_PATH search path, as in
 
+```nginx
     # nginx.conf
     http {
         lua_package_path "/path/to/lua-resty-redis/lib/?.lua;;";
         ...
     }
+```
 
 Ensure that the system account running your Nginx ''worker'' proceses have
 enough permission to read the `.lua` file.
