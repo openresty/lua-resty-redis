@@ -3,6 +3,43 @@ Name
 
 lua-resty-redis - Lua redis client driver for the ngx_lua based on the cosocket API
 
+Table of Contents
+=================
+
+* [Name](#name)
+* [Status](#status)
+* [Description](#description)
+* [Synopsis](#synopsis)
+* [Methods](#methods)
+    * [new](#new)
+    * [connect](#connect)
+    * [set_timeout](#set_timeout)
+    * [set_keepalive](#set_keepalive)
+    * [get_reused_times](#get_reused_times)
+    * [close](#close)
+    * [init_pipeline](#init_pipeline)
+    * [commit_pipeline](#commit_pipeline)
+    * [cancel_pipeline](#cancel_pipeline)
+    * [hmset](#hmset)
+    * [array_to_hash](#array_to_hash)
+    * [read_reply](#read_reply)
+    * [add_commands](#add_commands)
+* [Redis Authentication](#redis-authentication)
+* [Redis Transactions](#redis-transactions)
+* [Load Balancing and Failover](#load-balancing-and-failover)
+* [Debugging](#debugging)
+* [Automatic Error Logging](#automatic-error-logging)
+* [Limitations](#limitations)
+* [Installation](#installation)
+* [TODO](#todo)
+* [Community](#community)
+    * [English Mailing List](#english-mailing-list)
+    * [Chinese Mailing List](#chinese-mailing-list)
+* [Bugs and Patches](#bugs-and-patches)
+* [Author](#author)
+* [Copyright and License](#copyright-and-license)
+* [See Also](#see-also)
+
 Status
 ======
 
@@ -109,6 +146,8 @@ Synopsis
     }
 ```
 
+[Back to TOC](#table-of-contents)
+
 Methods
 =======
 
@@ -164,11 +203,15 @@ See http://redis.io/topics/protocol for details regarding various Redis reply ty
 
 In addition to all those redis command methods, the following methods are also provided:
 
+[Back to TOC](#table-of-contents)
+
 new
 ---
 `syntax: red, err = redis:new()`
 
 Creates a redis object. In case of failures, returns `nil` and a string describing the error.
+
+[Back to TOC](#table-of-contents)
 
 connect
 -------
@@ -185,11 +228,15 @@ An optional Lua table can be specified as the last argument to this method to sp
 * `pool`
     Specifies a custom name for the connection pool being used. If omitted, then the connection pool name will be generated from the string template `<host>:<port>` or `<unix-socket-path>`.
 
+[Back to TOC](#table-of-contents)
+
 set_timeout
 ----------
 `syntax: red:set_timeout(time)`
 
 Sets the timeout (in ms) protection for subsequent operations, including the `connect` method.
+
+[Back to TOC](#table-of-contents)
 
 set_keepalive
 ------------
@@ -203,6 +250,8 @@ In case of success, returns `1`. In case of errors, returns `nil` with a string 
 
 Only call this method in the place you would have called the `close` method instead. Calling this method will immediately turn the current redis object into the `closed` state. Any subsequent operations other than `connect()` on the current objet will return the `closed` error.
 
+[Back to TOC](#table-of-contents)
+
 get_reused_times
 ----------------
 `syntax: times, err = red:get_reused_times()`
@@ -211,6 +260,8 @@ This method returns the (successfully) reused times for the current connection. 
 
 If the current connection does not come from the built-in connection pool, then this method always returns `0`, that is, the connection has never been reused (yet). If the connection comes from the connection pool, then the return value is always non-zero. So this method can also be used to determine if the current connection comes from the pool.
 
+[Back to TOC](#table-of-contents)
+
 close
 -----
 `syntax: ok, err = red:close()`
@@ -218,6 +269,8 @@ close
 Closes the current redis connection and returns the status.
 
 In case of success, returns `1`. In case of errors, returns `nil` with a string describing the error.
+
+[Back to TOC](#table-of-contents)
 
 init_pipeline
 -------------
@@ -229,6 +282,8 @@ This method always succeeds.
 
 If the redis object is already in the Redis pipelining mode, then calling this method will discard existing cached Redis queries.
 
+[Back to TOC](#table-of-contents)
+
 commit_pipeline
 ---------------
 `syntax: results, err = red:commit_pipeline()`
@@ -236,6 +291,8 @@ commit_pipeline
 Quits the pipelining mode by committing all the cached Redis queries to the remote server in a single run. All the replies for these queries will be collected automatically and are returned as if a big multi-bulk reply at the highest level.
 
 This method returns `nil` and a Lua string describing the error upon failures.
+
+[Back to TOC](#table-of-contents)
 
 cancel_pipeline
 ---------------
@@ -246,6 +303,8 @@ Quits the pipelining mode by discarding all existing cached Redis commands since
 This method always succeeds.
 
 If the redis object is not in the Redis pipelining mode, then this method is a no-op.
+
+[Back to TOC](#table-of-contents)
 
 hmset
 -----
@@ -258,6 +317,8 @@ Special wrapper for the Redis "hmset" command.
 When there are only three arguments (including the "red" object
 itself), then the last argument must be a Lua table holding all the field/value pairs.
 
+[Back to TOC](#table-of-contents)
+
 array_to_hash
 -------------
 `syntax: hash = red:array_to_hash(array)`
@@ -265,6 +326,8 @@ array_to_hash
 Auxiliary function that converts an array-like Lua table into a hash-like table.
 
 This method was first introduced in the `v0.11` release.
+
+[Back to TOC](#table-of-contents)
 
 read_reply
 ----------
@@ -330,6 +393,8 @@ Running this example gives the output like this:
 
 The following class methods are provieded:
 
+[Back to TOC](#table-of-contents)
+
 add_commands
 ------------
 `syntax: hash = redis.add_commands(cmd_name1, cmd_name2, ...)`
@@ -361,6 +426,8 @@ Adds new redis commands to the `resty.redis` class. Here is an example:
         ngx.say("failed to bar: ", err)
     end
 ```
+
+[Back to TOC](#table-of-contents)
 
 Redis Authentication
 ====================
@@ -398,6 +465,8 @@ If the password specified is wrong, then the sample above will output the
 following to the HTTP client:
 
     failed to authenticate: ERR invalid password
+
+[Back to TOC](#table-of-contents)
 
 Redis Transactions
 ==================
@@ -451,12 +520,16 @@ Then the output will be
     set ans: "QUEUED"
     exec ans: ["OK",[false,"ERR Operation against a key holding the wrong kind of value"]]
 
+[Back to TOC](#table-of-contents)
+
 Load Balancing and Failover
 ===========================
 
 You can trivially implement your own Redis load balancing logic yourself in Lua. Just keep a Lua table of all available Redis backend information (like host name and port numbers) and pick one server according to some rule (like round-robin or key-based hashing) from the Lua table at every request. You can keep track of the current rule state in your own Lua module's data, see http://wiki.nginx.org/HttpLuaModule#Data_Sharing_within_an_Nginx_Worker
 
 Similarly, you can implement automatic failover logic in Lua at great flexibility.
+
+[Back to TOC](#table-of-contents)
 
 Debugging
 =========
@@ -472,6 +545,8 @@ It is usually convenient to use the [lua-cjson](http://www.kyne.com.au/~mark/sof
     end
 ```
 
+[Back to TOC](#table-of-contents)
+
 Automatic Error Logging
 =======================
 
@@ -482,6 +557,8 @@ handling in your own Lua code, then you are recommended to disable this automati
 ```nginx
     lua_socket_log_errors off;
 ```
+
+[Back to TOC](#table-of-contents)
 
 Limitations
 ===========
@@ -496,6 +573,8 @@ result in bad race conditions when concurrent requests are trying to use the sam
 You should always initiate `resty.redis` objects in function local
 variables or in the `ngx.ctx` table. These places all have their own data copies for
 each request.
+
+[Back to TOC](#table-of-contents)
 
 Installation
 ============
@@ -525,21 +604,31 @@ tree to ngx_lua's LUA_PATH search path, as in
 Ensure that the system account running your Nginx ''worker'' proceses have
 enough permission to read the `.lua` file.
 
+[Back to TOC](#table-of-contents)
+
 TODO
 ====
 
+[Back to TOC](#table-of-contents)
+
 Community
 =========
+
+[Back to TOC](#table-of-contents)
 
 English Mailing List
 --------------------
 
 The [openresty-en](https://groups.google.com/group/openresty-en) mailing list is for English speakers.
 
+[Back to TOC](#table-of-contents)
+
 Chinese Mailing List
 --------------------
 
 The [openresty](https://groups.google.com/group/openresty) mailing list is for Chinese speakers.
+
+[Back to TOC](#table-of-contents)
 
 Bugs and Patches
 ================
@@ -549,10 +638,14 @@ Please report bugs or submit patches by
 1. creating a ticket on the [GitHub Issue Tracker](http://github.com/agentzh/lua-resty-redis/issues),
 1. or posting to the [OpenResty community](#community).
 
+[Back to TOC](#table-of-contents)
+
 Author
 ======
 
 Yichun "agentzh" Zhang (章亦春) <agentzh@gmail.com>, CloudFlare Inc.
+
+[Back to TOC](#table-of-contents)
 
 Copyright and License
 =====================
@@ -571,10 +664,14 @@ Redistribution and use in source and binary forms, with or without modification,
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+[Back to TOC](#table-of-contents)
+
 See Also
 ========
 * the ngx_lua module: http://wiki.nginx.org/HttpLuaModule
 * the redis wired protocol specification: http://redis.io/topics/protocol
 * the [lua-resty-memcached](https://github.com/agentzh/lua-resty-memcached) library
 * the [lua-resty-mysql](https://github.com/agentzh/lua-resty-mysql) library
+
+[Back to TOC](#table-of-contents)
 
