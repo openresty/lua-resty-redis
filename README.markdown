@@ -226,6 +226,7 @@ Before actually resolving the host name and connecting to the remote backend, th
 An optional Lua table can be specified as the last argument to this method to specify various connect options:
 
 * `pool`
+
     Specifies a custom name for the connection pool being used. If omitted, then the connection pool name will be generated from the string template `<host>:<port>` or `<unix-socket-path>`.
 
 [Back to TOC](#table-of-contents)
