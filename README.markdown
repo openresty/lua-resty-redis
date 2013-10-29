@@ -277,11 +277,15 @@ init_pipeline
 -------------
 `syntax: red:init_pipeline()`
 
+`syntax: red:init_pipeline(n)`
+
 Enable the redis pipelining mode. All subsequent calls to Redis command methods will automatically get cached and will send to the server in one run when the `commit_pipeline` method is called or get cancelled by calling the `cancel_pipeline` method.
 
 This method always succeeds.
 
 If the redis object is already in the Redis pipelining mode, then calling this method will discard existing cached Redis queries.
+
+The optional `n` argument specifies the (approximate) number of commands that are going to add to this pipeline, which can make things a little faster.
 
 [Back to TOC](#table-of-contents)
 
