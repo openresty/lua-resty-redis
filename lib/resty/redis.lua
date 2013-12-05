@@ -11,6 +11,7 @@ local setmetatable = setmetatable
 local tonumber = tonumber
 local error = error
 
+
 local ok, new_tab = pcall(require, "table.new")
 if not ok then
     new_tab = function (narr, nrec) return {} end
@@ -99,9 +100,11 @@ function _M.set_timeout(self, timeout)
     return sock:settimeout(timeout)
 end
 
+
 function _M.skip_responses(self, bool_skip)
     _M._skip_responses = bool_skip
 end
+
 
 function _M.connect(self, ...)
     local sock = self.sock
