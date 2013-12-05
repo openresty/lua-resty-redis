@@ -10,7 +10,6 @@ local unpack = unpack
 local setmetatable = setmetatable
 local tonumber = tonumber
 local error = error
-local skip_responses = false
 
 local ok, new_tab = pcall(require, "table.new")
 if not ok then
