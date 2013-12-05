@@ -100,8 +100,8 @@ function _M.set_timeout(self, timeout)
     return sock:settimeout(timeout)
 end
 
-function _M.skip_responses(self, skip)
-    skip_responses = skip
+function _M.skip_responses(self, skip_responses)
+    _M._skip_responses = skip_responses
 end
 
 function _M.connect(self, ...)
@@ -145,7 +145,7 @@ end
 
 
 local function _read_reply(sock)
-    if skip_responses then
+    if _M._skip_responses then
         return null
     end
 
