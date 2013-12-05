@@ -10,7 +10,7 @@ local unpack = unpack
 local setmetatable = setmetatable
 local tonumber = tonumber
 local error = error
-
+local skip_responses = false
 
 local ok, new_tab = pcall(require, "table.new")
 if not ok then
@@ -100,6 +100,9 @@ function _M.set_timeout(self, timeout)
     return sock:settimeout(timeout)
 end
 
+function _M.skip_responses(self, skip)
+    skip_responses = skip
+end
 
 function _M.connect(self, ...)
     local sock = self.sock
@@ -142,6 +145,10 @@ end
 
 
 local function _read_reply(sock)
+    if skip_responses then
+        return null
+    end
+
     local line, err = sock:receive()
     if not line then
         return nil, err
