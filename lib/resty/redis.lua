@@ -100,8 +100,8 @@ function _M.set_timeout(self, timeout)
     return sock:settimeout(timeout)
 end
 
-function _M.skip_responses(self, skip_responses)
-    _M._skip_responses = skip_responses
+function _M.skip_responses(self, bool_skip)
+    _M._skip_responses = bool_skip
 end
 
 function _M.connect(self, ...)

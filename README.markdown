@@ -15,6 +15,7 @@ Table of Contents
     * [connect](#connect)
     * [set_timeout](#set_timeout)
     * [set_keepalive](#set_keepalive)
+    * [skip_responses](#skip_responses)
     * [get_reused_times](#get_reused_times)
     * [close](#close)
     * [init_pipeline](#init_pipeline)
@@ -252,6 +253,16 @@ In case of success, returns `1`. In case of errors, returns `nil` with a string 
 Only call this method in the place you would have called the `close` method instead. Calling this method will immediately turn the current redis object into the `closed` state. Any subsequent operations other than `connect()` on the current objet will return the `closed` error.
 
 [Back to TOC](#table-of-contents)
+
+skip_responses
+------------
+`syntax: red:skip_responses(bool_skip)`
+
+Instructs the Redis client to skip incoming responses from the server. 
+
+When `true`, a `ngx.null` value is returned on every Redis operation.
+
+Use this property in specific high volume write scenarios where invoking the default `tcpsock:receive` function call on every operation is considered too expensive.
 
 get_reused_times
 ----------------
