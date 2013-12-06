@@ -260,9 +260,7 @@ skip_responses
 
 Instructs the Redis client to skip incoming responses from the server. 
 
-When `true`, a `ngx.null` value is returned on every Redis operation.
-
-Use this property in specific high volume write scenarios where invoking the default `tcpsock:receive` function call on every operation is considered too expensive.
+Use this property in specific high volume write scenarios where reading the response on every operation is considered too expensive.
 
 get_reused_times
 ----------------

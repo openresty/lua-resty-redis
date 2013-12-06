@@ -147,11 +147,7 @@ end
 
 
 local function _read_reply(sock)
-    if _M._skip_responses then
-        return null
-    end
-
-    local line, err = sock:receive()
+    local line, err = (_M._skip_responses and sock:receive(0) or sock:receive())
     if not line then
         return nil, err
     end
