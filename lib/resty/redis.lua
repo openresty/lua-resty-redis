@@ -144,6 +144,9 @@ end
 local function _read_reply(sock)
     local line, err = sock:receive()
     if not line then
+        if err == "timeout" then
+            sock:close()
+        end
         return nil, err
     end
 
@@ -159,11 +162,17 @@ local function _read_reply(sock)
 
         local data, err = sock:receive(size)
         if not data then
+            if err == "timeout" then
+                sock:close()
+            end
             return nil, err
         end
 
         local dummy, err = sock:receive(2) -- ignore CRLF
         if not dummy then
+            if err == "timeout" then
+                sock:close()
+            end
             return nil, err
         end
 
