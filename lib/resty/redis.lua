@@ -2,6 +2,7 @@
 
 
 local sub = string.sub
+local byte = string.byte
 local tcp = ngx.socket.tcp
 local concat = table.concat
 local null = ngx.null
@@ -150,9 +151,9 @@ local function _read_reply(sock)
         return nil, err
     end
 
-    local prefix = sub(line, 1, 1)
+    local prefix = byte(line)
 
-    if prefix == "$" then
+    if prefix == 36 then    -- char '$'
         -- print("bulk reply")
 
         local size = tonumber(sub(line, 2))
@@ -170,20 +171,17 @@ local function _read_reply(sock)
 
         local dummy, err = sock:receive(2) -- ignore CRLF
         if not dummy then
-            if err == "timeout" then
-                sock:close()
-            end
             return nil, err
         end
 
         return data
 
-    elseif prefix == "+" then
+    elseif prefix == 43 then    -- char '+'
         -- print("status reply")
 
         return sub(line, 2)
 
-    elseif prefix == "*" then
+    elseif prefix == 42 then -- char '*'
         local n = tonumber(sub(line, 2))
 
         -- print("multi-bulk reply: ", n)
@@ -210,11 +208,11 @@ local function _read_reply(sock)
         end
         return vals
 
-    elseif prefix == ":" then
+    elseif prefix == 58 then    -- char ':'
         -- print("integer reply")
         return tonumber(sub(line, 2))
 
-    elseif prefix == "-" then
+    elseif prefix == 45 then    -- char '-'
         -- print("error reply: ", n)
 
         return false, sub(line, 2)
