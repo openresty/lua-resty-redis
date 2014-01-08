@@ -32,13 +32,13 @@ __DATA__
             local redis = require "resty.redis"
             local red = redis:new()
 
-            red:set_timeout(100) -- 0.1 sec
-
             local ok, err = red:connect("127.0.0.1", 1921);
             if not ok then
                 ngx.say("failed to connect: ", err)
                 return
             end
+
+            red:set_timeout(100) -- 0.1 sec
 
             for i = 1, 2 do
                 local data, err = red:get("foo")
