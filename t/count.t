@@ -1,6 +1,6 @@
 # vim:set ft= ts=4 sw=4 et:
 
-use Test::Nginx::Socket;
+use Test::Nginx::Socket::Lua;
 use Cwd qw(cwd);
 
 repeat_each(2);

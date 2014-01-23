@@ -1,6 +1,6 @@
 # vim:set ft= ts=4 sw=4 et:
 
-use Test::Nginx::Socket;
+use Test::Nginx::Socket::Lua;
 use Cwd qw(cwd);
 
 repeat_each(2);
@@ -136,18 +136,20 @@ flushall: OK
 
             ngx.say("flushall: ", res)
 
-            res, err = red:get("not_found")
-            if err then
-                ngx.say("failed to get: ", err)
-                return
-            end
+            for i = 1, 2 do
+                res, err = red:get("not_found")
+                if err then
+                    ngx.say("failed to get: ", err)
+                    return
+                end
 
-            if res == ngx.null then
-                ngx.say("not_found not found.")
-                return
-            end
+                if res == ngx.null then
+                    ngx.say("not_found not found.")
+                    return
+                end
 
-            ngx.say("get not_found: ", res)
+                ngx.say("get not_found: ", res)
+            end
 
             red:close()
         ';
@@ -186,18 +188,20 @@ not_found not found.
 
             ngx.say("flushall: ", res)
 
-            res, err = red:lrange("nokey", 0, 1)
-            if err then
-                ngx.say("failed to get: ", err)
-                return
-            end
+            for i = 1, 2 do
+                res, err = red:lrange("nokey", 0, 1)
+                if err then
+                    ngx.say("failed to get: ", err)
+                    return
+                end
 
-            if res == ngx.null then
-                ngx.say("nokey not found.")
-                return
-            end
+                if res == ngx.null then
+                    ngx.say("nokey not found.")
+                    return
+                end
 
-            ngx.say("get nokey: ", #res, " (", type(res), ")")
+                ngx.say("get nokey: ", #res, " (", type(res), ")")
+            end
 
             red:close()
         ';
@@ -206,6 +210,7 @@ not_found not found.
 GET /t
 --- response_body
 flushall: OK
+get nokey: 0 (table)
 get nokey: 0 (table)
 --- no_error_log
 [error]

@@ -5,7 +5,7 @@ use Cwd qw(cwd);
 
 repeat_each(2);
 
-plan tests => repeat_each() * (3 * blocks());
+plan tests => repeat_each() * (4 * blocks());
 
 my $pwd = cwd();
 
@@ -24,42 +24,51 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: single channel
+=== TEST 1: continue using the obj when read timeout happens
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
-            local cjson = require "cjson"
             local redis = require "resty.redis"
-
-            redis.add_commands("foo", "bar")
-
             local red = redis:new()
 
-            red:set_timeout(1000) -- 1 sec
-
-            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            local ok, err = red:connect("127.0.0.1", 1921);
             if not ok then
                 ngx.say("failed to connect: ", err)
                 return
             end
 
-            local res, err = red:foo("a")
-            if not res then
-                ngx.say("failed to foo: ", err)
+            red:set_timeout(100) -- 0.1 sec
+
+            for i = 1, 2 do
+                local data, err = red:get("foo")
+                if not data then
+                    ngx.say("failed to get: ", err)
+                else
+                    ngx.say("get: ", data);
+                end
+                ngx.sleep(0.1)
             end
 
-            res, err = red:bar()
-            if not res then
-                ngx.say("failed to bar: ", err)
-            end
+            red:close()
         ';
     }
 --- request
 GET /t
+--- tcp_listen: 1921
+--- tcp_query eval
+"*2\r
+\$3\r
+get\r
+\$3\r
+foo\r
+"
+--- tcp_reply eval
+"\$5\r\nhello\r\n"
+--- tcp_reply_delay: 150ms
 --- response_body
-failed to foo: ERR unknown command 'foo'
-failed to bar: ERR unknown command 'bar'
---- no_error_log
-[error]
+failed to get: timeout
+failed to get: closed
+--- error_log
+lua tcp socket read timed out
 

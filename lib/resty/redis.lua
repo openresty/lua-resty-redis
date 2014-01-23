@@ -2,6 +2,7 @@
 
 
 local sub = string.sub
+local byte = string.byte
 local tcp = ngx.socket.tcp
 local concat = table.concat
 local null = ngx.null
@@ -19,7 +20,7 @@ end
 
 
 local _M = new_tab(0, 151)
-_M._VERSION = '0.16'
+_M._VERSION = '0.18'
 
 
 local commands = {
@@ -149,12 +150,15 @@ end
 local function _read_reply(sock)
     local line, err = (_M._skip_responses and sock:receive(0) or sock:receive())
     if not line then
+        if err == "timeout" then
+            sock:close()
+        end
         return nil, err
     end
 
-    local prefix = sub(line, 1, 1)
+    local prefix = byte(line)
 
-    if prefix == "$" then
+    if prefix == 36 then    -- char '$'
         -- print("bulk reply")
 
         local size = tonumber(sub(line, 2))
@@ -164,6 +168,9 @@ local function _read_reply(sock)
 
         local data, err = sock:receive(size)
         if not data then
+            if err == "timeout" then
+                sock:close()
+            end
             return nil, err
         end
 
@@ -174,12 +181,12 @@ local function _read_reply(sock)
 
         return data
 
-    elseif prefix == "+" then
+    elseif prefix == 43 then    -- char '+'
         -- print("status reply")
 
         return sub(line, 2)
 
-    elseif prefix == "*" then
+    elseif prefix == 42 then -- char '*'
         local n = tonumber(sub(line, 2))
 
         -- print("multi-bulk reply: ", n)
@@ -206,11 +213,11 @@ local function _read_reply(sock)
         end
         return vals
 
-    elseif prefix == ":" then
+    elseif prefix == 58 then    -- char ':'
         -- print("integer reply")
         return tonumber(sub(line, 2))
 
-    elseif prefix == "-" then
+    elseif prefix == 45 then    -- char '-'
         -- print("error reply: ", n)
 
         return false, sub(line, 2)
