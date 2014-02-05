@@ -108,6 +108,8 @@ function _M.connect(self, ...)
         return nil, "not initialized"
     end
 
+    self.read_timed_out = nil
+
     return sock:connect(...)
 end
 
@@ -116,6 +118,10 @@ function _M.set_keepalive(self, ...)
     local sock = self.sock
     if not sock then
         return nil, "not initialized"
+    end
+
+    if self.read_timed_out then
+        return nil, "read timed out"
     end
 
     return sock:setkeepalive(...)
@@ -132,7 +138,7 @@ function _M.get_reused_times(self)
 end
 
 
-function _M.close(self)
+local function close(self)
     local sock = self.sock
     if not sock then
         return nil, "not initialized"
@@ -140,13 +146,14 @@ function _M.close(self)
 
     return sock:close()
 end
+_M.close = close
 
 
-local function _read_reply(sock)
+local function _read_reply(self, sock)
     local line, err = sock:receive()
     if not line then
         if err == "timeout" then
-            sock:close()
+            self.read_timed_out = true
         end
         return nil, err
     end
@@ -174,10 +181,14 @@ local function _read_reply(sock)
             return nil, err
         end
 
+        self.read_timed_out = nil
+
         return data
 
     elseif prefix == 43 then    -- char '+'
         -- print("status reply")
+
+        self.read_timed_out = nil
 
         return sub(line, 2)
 
@@ -186,13 +197,14 @@ local function _read_reply(sock)
 
         -- print("multi-bulk reply: ", n)
         if n < 0 then
+            self.read_timed_out = nil
             return null
         end
 
         local vals = new_tab(n, 0);
         local nvals = 0
         for i = 1, n do
-            local res, err = _read_reply(sock)
+            local res, err = _read_reply(self, sock)
             if res then
                 nvals = nvals + 1
                 vals[nvals] = res
@@ -206,15 +218,19 @@ local function _read_reply(sock)
                 vals[nvals] = {false, err}
             end
         end
+
+        self.read_timed_out = nil
         return vals
 
     elseif prefix == 58 then    -- char ':'
         -- print("integer reply")
+        self.read_timed_out = nil
         return tonumber(sub(line, 2))
 
     elseif prefix == 45 then    -- char '-'
         -- print("error reply: ", n)
 
+        self.read_timed_out = nil
         return false, sub(line, 2)
 
     else
@@ -268,12 +284,16 @@ local function _do_cmd(self, ...)
 
     -- print("request: ", table.concat(req))
 
+    if self.read_timed_out then
+        return nil, "read timed out"
+    end
+
     local bytes, err = sock:send(req)
     if not bytes then
         return nil, err
     end
 
-    return _read_reply(sock)
+    return _read_reply(self, sock)
 end
 
 
@@ -283,7 +303,7 @@ function _M.read_reply(self)
         return nil, "not initialized"
     end
 
-    return _read_reply(sock)
+    return _read_reply(self, sock)
 end
 
 
@@ -347,6 +367,10 @@ function _M.commit_pipeline(self)
         return nil, "not initialized"
     end
 
+    if self.read_timed_out then
+        return nil, "read timed out"
+    end
+
     local bytes, err = sock:send(reqs)
     if not bytes then
         return nil, err
@@ -356,12 +380,15 @@ function _M.commit_pipeline(self)
     local nreqs = #reqs
     local vals = new_tab(nreqs, 0)
     for i = 1, nreqs do
-        local res, err = _read_reply(sock)
+        local res, err = _read_reply(self, sock)
         if res then
             nvals = nvals + 1
             vals[nvals] = res
 
         elseif res == nil then
+            if err == "timeout" then
+                close(self)
+            end
             return nil, err
 
         else
