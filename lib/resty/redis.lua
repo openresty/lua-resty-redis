@@ -19,7 +19,7 @@ if not ok then
 end
 
 
-local _M = new_tab(0, 151)
+local _M = new_tab(0, 155)
 _M._VERSION = '0.19'
 
 
@@ -39,7 +39,8 @@ local commands = {
     "hexists",           "hget",              "hgetall",
     "hincrby",           "hincrbyfloat",      "hkeys",
     "hlen",
-    "hmget",             --[[ "hmset", ]]     "hset",
+    "hmget",             --[[ "hmset", ]]     "hscan",
+    "hset",
     "hsetnx",            "hvals",             "incr",
     "incrby",            "incrbyfloat",       "info",
     "keys",
@@ -59,7 +60,7 @@ local commands = {
     "restore",
     "rpop",              "rpoplpush",         "rpush",
     "rpushx",            "sadd",              "save",
-    "scard",             "script",
+    "scan",              "scard",             "script",
     "sdiff",             "sdiffstore",
     "select",            "set",               "setbit",
     "setex",             "setnx",             "setrange",
@@ -67,6 +68,7 @@ local commands = {
     "sismember",         "slaveof",           "slowlog",
     "smembers",          "smove",             "sort",
     "spop",              "srandmember",       "srem",
+    "sscan",
     "strlen",            "subscribe",         "sunion",
     "sunionstore",       "sync",              "time",
     "ttl",
@@ -76,6 +78,7 @@ local commands = {
     "zrange",            "zrangebyscore",     "zrank",
     "zrem",              "zremrangebyrank",   "zremrangebyscore",
     "zrevrange",         "zrevrangebyscore",  "zrevrank",
+    "zscan",
     "zscore",            "zunionstore",       "evalsha"
 }
 
