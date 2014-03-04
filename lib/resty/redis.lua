@@ -52,9 +52,9 @@ local commands = {
     "monitor",           "move",              "mset",
     "msetnx",            "multi",             "object",
     "persist",           "pexpire",           "pexpireat",
-    "ping",              "psetex",            "psubscribe",
+    "ping",              "psetex",            --[[ "psubscribe", ]]
     "pttl",
-    "publish",           "punsubscribe",      "pubsub",
+    "publish",           "pubsub",            --[[ "punsubscribe", ]]
     "quit",
     "randomkey",         "rename",            "renamenx",
     "restore",
@@ -69,10 +69,10 @@ local commands = {
     "smembers",          "smove",             "sort",
     "spop",              "srandmember",       "srem",
     "sscan",
-    "strlen",            "subscribe",         "sunion",
+    "strlen",            "sunion",            --[[ "subscribe", ]]
     "sunionstore",       "sync",              "time",
     "ttl",
-    "type",              "unsubscribe",       "unwatch",
+    "type",              "unwatch",           --[[ "unsubscribe", ]]
     "watch",             "zadd",              "zcard",
     "zcount",            "zincrby",           "zinterstore",
     "zrange",            "zrangebyscore",     "zrank",
@@ -80,6 +80,14 @@ local commands = {
     "zrevrange",         "zrevrangebyscore",  "zrevrank",
     "zscan",
     "zscore",            "zunionstore",       "evalsha"
+}
+
+local sub_commands = {
+    "subscribe",         "psubscribe"
+}
+
+local unsub_commands = {
+    "unsubscribe",         "punsubscribe"
 }
 
 
@@ -111,7 +119,7 @@ function _M.connect(self, ...)
         return nil, "not initialized"
     end
 
-    self.read_timed_out = nil
+    self.subscribed = nil
 
     return sock:connect(...)
 end
@@ -123,8 +131,8 @@ function _M.set_keepalive(self, ...)
         return nil, "not initialized"
     end
 
-    if self.read_timed_out then
-        return nil, "read timed out"
+    if self.subscribed then
+        return nil, "subscribed state"
     end
 
     return sock:setkeepalive(...)
@@ -155,8 +163,8 @@ _M.close = close
 local function _read_reply(self, sock)
     local line, err = sock:receive()
     if not line then
-        if err == "timeout" then
-            self.read_timed_out = true
+        if err == "timeout" and not self.subscribed then
+            sock:close()
         end
         return nil, err
     end
@@ -184,14 +192,10 @@ local function _read_reply(self, sock)
             return nil, err
         end
 
-        self.read_timed_out = nil
-
         return data
 
     elseif prefix == 43 then    -- char '+'
         -- print("status reply")
-
-        self.read_timed_out = nil
 
         return sub(line, 2)
 
@@ -200,7 +204,6 @@ local function _read_reply(self, sock)
 
         -- print("multi-bulk reply: ", n)
         if n < 0 then
-            self.read_timed_out = nil
             return null
         end
 
@@ -222,18 +225,15 @@ local function _read_reply(self, sock)
             end
         end
 
-        self.read_timed_out = nil
         return vals
 
     elseif prefix == 58 then    -- char ':'
         -- print("integer reply")
-        self.read_timed_out = nil
         return tonumber(sub(line, 2))
 
     elseif prefix == 45 then    -- char '-'
         -- print("error reply: ", n)
 
-        self.read_timed_out = nil
         return false, sub(line, 2)
 
     else
@@ -277,6 +277,10 @@ local function _do_cmd(self, ...)
         return nil, "not initialized"
     end
 
+    if self.subscribed then
+        return nil, "subscribed state"
+    end
+
     local req = _gen_req(args)
 
     local reqs = self._reqs
@@ -287,10 +291,6 @@ local function _do_cmd(self, ...)
 
     -- print("request: ", table.concat(req))
 
-    if self.read_timed_out then
-        return nil, "read timed out"
-    end
-
     local bytes, err = sock:send(req)
     if not bytes then
         return nil, err
@@ -300,13 +300,30 @@ local function _do_cmd(self, ...)
 end
 
 
+function _check_subscribed(self, res)
+    if res and res ~= null and res[1] 
+        and (res[1] == "unsubscribe" or res[1] == "punsubscribe")
+        and res[3] == 0 then
+
+        self.subscribed = nil
+    end
+end
+
+
 function _M.read_reply(self)
     local sock = self.sock
     if not sock then
         return nil, "not initialized"
     end
 
-    return _read_reply(self, sock)
+    if not self.subscribed then
+        return nil, "not subscribed"
+    end
+
+    local res, err = _read_reply(self, sock)
+    _check_subscribed(self, res)
+
+    return res, err
 end
 
 
@@ -316,6 +333,29 @@ for i = 1, #commands do
     _M[cmd] =
         function (self, ...)
             return _do_cmd(self, cmd, ...)
+        end
+end
+
+
+for i = 1, #sub_commands do
+    local cmd = sub_commands[i]
+
+    _M[cmd] =
+        function (self, ...)
+            self.subscribed = true
+            return _do_cmd(self, cmd, ...)
+        end
+end
+
+
+for i = 1, #unsub_commands do
+    local cmd = unsub_commands[i]
+
+    _M[cmd] =
+        function (self, ...)
+            local res, err = _do_cmd(self, cmd, ...)
+            _check_unsubscribed(self, res)
+            return res, err
         end
 end
 
@@ -368,10 +408,6 @@ function _M.commit_pipeline(self)
     local sock = self.sock
     if not sock then
         return nil, "not initialized"
-    end
-
-    if self.read_timed_out then
-        return nil, "read timed out"
     end
 
     local bytes, err = sock:send(reqs)
