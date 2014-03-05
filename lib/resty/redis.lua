@@ -277,10 +277,6 @@ local function _do_cmd(self, ...)
         return nil, "not initialized"
     end
 
-    if self.subscribed then
-        return nil, "subscribed state"
-    end
-
     local req = _gen_req(args)
 
     local reqs = self._reqs
@@ -354,7 +350,7 @@ for i = 1, #unsub_commands do
     _M[cmd] =
         function (self, ...)
             local res, err = _do_cmd(self, cmd, ...)
-            _check_unsubscribed(self, res)
+            _check_subscribed(self, res)
             return res, err
         end
 end
