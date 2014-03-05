@@ -296,8 +296,8 @@ local function _do_cmd(self, ...)
 end
 
 
-function _check_subscribed(self, res)
-    if res and res ~= null and res[1] 
+local function _check_subscribed(self, res)
+    if type(res) == "table" and
         and (res[1] == "unsubscribe" or res[1] == "punsubscribe")
         and res[3] == 0 then
 
