@@ -154,10 +154,10 @@ GET /t
             res, err = red:read_reply()
             if not res then
                 ngx.say("1: failed to read reply: ", err)
-                return
-            end
 
-            ngx.say("1: receive: ", cjson.encode(res))
+            else
+                ngx.say("1: receive: ", cjson.encode(res))
+            end
 
             res, err = red:unsubscribe("dog")
             if not res then
@@ -177,9 +177,9 @@ GET /t
 1: subscribe: ["subscribe","dog",1]
 1: failed to read reply: timeout
 1: failed to read reply: timeout
-1: failed to unsubscribe: read timed out
-2: publish: 1
-1: receive: ["message","dog","Hello"]
+1: unsubscribe: ["unsubscribe","dog",0]
+2: publish: 0
+1: failed to read reply: not subscribed
 1: unsubscribe: ["unsubscribe","dog",0]
 --- no_error_log
 [error]

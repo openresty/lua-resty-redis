@@ -68,7 +68,7 @@ foo\r
 --- tcp_reply_delay: 150ms
 --- response_body
 failed to get: timeout
-failed to get: read timed out
+failed to get: closed
 --- error_log
 lua tcp socket read timed out
 
