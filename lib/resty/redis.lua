@@ -297,7 +297,7 @@ end
 
 
 local function _check_subscribed(self, res)
-    if type(res) == "table" and
+    if type(res) == "table"
         and (res[1] == "unsubscribe" or res[1] == "punsubscribe")
         and res[3] == 0 then
 
