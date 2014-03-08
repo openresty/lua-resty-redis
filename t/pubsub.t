@@ -282,15 +282,15 @@ GET /t
     }
 --- request
 GET /t
---- response_body
-1: subscribe dog: ["subscribe","dog",1]
-1: subscribe cat: ["subscribe","cat",2]
+--- response_body_like chop
+^1: subscribe dog: \["subscribe","dog",1\]
+1: subscribe cat: \["subscribe","cat",2\]
 2: publish: 1
-1: receive: ["message","dog","Hello"]
+1: receive: \["message","dog","Hello"\]
 1: failed to read reply: timeout
-1: unsubscribe: ["unsubscribe","cat",1]
-1: receive: ["unsubscribe","dog",0]
-1: failed to read reply: not subscribed
+1: unsubscribe: \["unsubscribe","(?:cat|dog)",1\]
+1: receive: \["unsubscribe","(?:dog|cat)",0\]
+1: failed to read reply: not subscribed$
 
 --- no_error_log
 [error]
