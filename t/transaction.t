@@ -131,11 +131,12 @@ exec ans: [{}]
     }
 --- request
 GET /t
---- response_body
-multi ans: "OK"
+--- response_body_like chop
+^multi ans: "OK"
 set ans: "QUEUED"
 set ans: "QUEUED"
-exec ans: ["OK",[false,"ERR Operation against a key holding the wrong kind of value"]]
+exec ans: \["OK",\[false,"(?:ERR|WRONGTYPE) Operation against a key holding the wrong kind of value"\]\]
+$
 --- no_error_log
 [error]
 
