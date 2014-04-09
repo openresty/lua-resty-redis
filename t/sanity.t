@@ -40,6 +40,12 @@ __DATA__
                 return
             end
 
+            ok, err = red:select(1)
+            if not ok then
+                ngx.say("failed to select: ", err)
+                return
+            end
+
             res, err = red:set("dog", "an animal")
             if not res then
                 ngx.say("failed to set dog: ", err)
