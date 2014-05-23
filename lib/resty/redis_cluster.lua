@@ -221,7 +221,7 @@ function _M.initialize(self)
             self:populate_startup_nodes()
             cluster.initialized = true
             cluster.refresh_table_asap = false
-            r:set_keepalive(cluster.keepalive_size, cluster.keepalive_duration)
+            r:set_keepalive(cluster.keepalive_duration, cluster.keepalive_size)
             break
         else
             r:close()
@@ -361,7 +361,7 @@ function _M.send_cluster_command(self, cmd, ...)
         asking = false
 
         local result, err = r[cmd](r, ...)
-        r:set_keepalive(cluster.keepalive_size, cluster.keepalive_duration)
+        r:set_keepalive(cluster.keepalive_duration, cluster.keepalive_size)
 
         if err == nil and result ~= nil then
             return result, err
