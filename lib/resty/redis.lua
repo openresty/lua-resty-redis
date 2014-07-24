@@ -19,7 +19,7 @@ if not ok then
 end
 
 
-local _M = new_tab(0, 155)
+local _M = new_tab(0, 156)
 _M._VERSION = '0.20'
 
 
@@ -91,6 +91,8 @@ local sub_commands = {
 local unsub_commands = {
     "unsubscribe", "punsubscribe"
 }
+
+local merged = false
 
 
 local mt = { __index = _M }
@@ -300,9 +302,9 @@ end
 
 local function _check_subscribed(self, res)
     if type(res) == "table"
-       and (res[1] == "unsubscribe" or res[1] == "punsubscribe")
-       and res[3] == 0
-   then
+        and (res[1] == "unsubscribe" or res[1] == "punsubscribe")
+        and res[3] == 0
+    then
         self.subscribed = nil
     end
 end
@@ -452,13 +454,44 @@ end
 
 function _M.add_commands(...)
     local cmds = {...}
+    local len = #commands
+
     for i = 1, #cmds do
         local cmd = cmds[i]
-        _M[cmd] =
-            function (self, ...)
-                return _do_cmd(self, cmd, ...)
-            end
+
+        if not _M[cmd] then
+            len = len + 1
+            commands[len] = cmd
+
+            _M[cmd] =
+                function (self, ...)
+                    return _do_cmd(self, cmd, ...)
+                end
+        end
     end
+end
+
+
+function _M.get_commands()
+    if not merged then
+        local len = #commands
+
+        for i = 1, #sub_commands do
+            len = len + 1
+            commands[len] = sub_commands[i]
+        end
+
+        for i = 1, #unsub_commands do
+            len = len + 1
+            commands[len] = unsub_commands[i]
+        end
+
+        commands[len + 1] = "hmset"
+
+        merged = true
+    end
+
+    return commands
 end
 
 

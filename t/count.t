@@ -40,7 +40,53 @@ __DATA__
 --- request
 GET /t
 --- response_body
-size: 155
+size: 156
+--- no_error_log
+[error]
+
+
+=== TEST 2: command size of resty.redis
+--- http_config eval: $::HttpConfig
+--- config
+    location = /t {
+        content_by_lua '
+            local redis = require "resty.redis"
+            local commands = redis.get_commands()
+            n = 0
+            for _, _ in ipairs(commands) do
+                n = n + 1
+            end
+            ngx.say("size: ", n)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+size: 142
+--- no_error_log
+[error]
+
+
+=== TEST 3: command size of resty.redis with add_commands
+--- http_config eval: $::HttpConfig
+--- config
+    location = /t {
+        content_by_lua '
+            local redis = require "resty.redis"
+            redis.add_commands("new_test_command")
+
+            local commands = redis.get_commands()
+            n = 0
+            for _, _ in ipairs(commands) do
+                n = n + 1
+            end
+            ngx.say("size: ", n - 1)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+size: 142
 --- no_error_log
 [error]
 
