@@ -32,10 +32,11 @@ function _M.get_slaves(sentinel, master_name)
         local hosts = tbl_new(#res)
         for _,slave in ipairs(res) do
             local num_recs = #slave
-            local host = tbl_new(0, num_recs)
+            local host = tbl_new(0, num_recs + 1)
             for i = 1, num_recs, 2 do
                 host[slave[i]] = slave[i + 1]
             end
+            host.host = host.ip -- for parity with other functions
             tbl_insert(hosts, host)
         end
         if hosts[1] ~= nil then
