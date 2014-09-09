@@ -450,7 +450,7 @@ Sentinel Functions
 These are utility functions for convenience when working with the Sentinel commands for service discovery.
 
 
-get_master
+sentinel.get_master
 ------------
 `syntax: redis, err = sentinel.get_master(sentinel, master_name)`
 
@@ -483,7 +483,7 @@ local ok, err red:connect(master.host, master.port)
 [Back to TOC](#table-of-contents)
 
 
-get_slaves
+sentinel.get_slaves
 ------------
 `syntax: slaves, err = sentinel.get_slaves(sentinel, master_name)`
 
