@@ -24,6 +24,14 @@ Table of Contents
     * [array_to_hash](#array_to_hash)
     * [read_reply](#read_reply)
     * [add_commands](#add_commands)
+* [Sentinel Functions](#sentinel_functions)
+    * [get_master](#sentinel_get_master)
+    * [get_slaves](#sentinel_get_slaves)
+* [Connector Functions](#connector_functions)
+    * [connect](#connector_connect)
+    * [connect_via_sentinel](#connector_connect_via_sentinel)
+    * [try_hosts](#connector_try_hosts)
+    * [connect_to_host](#connector_connect_to_host)
 * [Redis Authentication](#redis-authentication)
 * [Redis Transactions](#redis-transactions)
 * [Load Balancing and Failover](#load-balancing-and-failover)
@@ -434,6 +442,84 @@ Adds new redis commands to the `resty.redis` class. Here is an example:
 ```
 
 [Back to TOC](#table-of-contents)
+
+
+Sentinel Functions
+==================
+
+These are utility functions for convenience when working with the Sentinel commands for service discovery.
+
+
+get_master
+------------
+`syntax: redis, err = sentinel.get_master(sentinel, master_name)`
+
+Returns the current master from sentinel, or `nil, err`. e.g.
+
+```lua
+local redis = require "resty.redis"
+local redis_sentinel = require "resty.redis.sentinel"
+
+local sentinel = redis:new()
+
+local ok, err = sentinel:connect("127.0.0.1", 26379)
+if not ok then
+   ngx.say("failed to connect: ", err)
+   return
+end
+
+local master, err = redis_sentinel.get_master(sentinel, "my_master_name")
+if not master then
+   ngx.say("failed to get master: ", err)
+   return
+end
+
+
+local red = redis:new()
+local ok, err red:connect(master.host, master.port)
+-- etc.
+```
+
+[Back to TOC](#table-of-contents)
+
+
+get_slaves
+------------
+`syntax: slaves, err = sentinel.get_slaves(sentinel, master_name)`
+
+Returns the available slaves from sentinel, or `nil, err`. e.g.
+
+```lua
+local redis = require "resty.redis"
+local redis_sentinel = require "resty.redis.sentinel"
+
+local sentinel = redis:new()
+
+local ok, err = sentinel:connect("127.0.0.1", 26379)
+if not ok then
+   ngx.say("failed to connect: ", err)
+   return
+end
+
+local slaves, err = redis_sentinel.get_slaves(sentinel, "my_master_name")
+if not master then
+   ngx.say("failed to get master: ", err)
+   return
+end
+
+
+local red = redis:new()
+for _,slave in ipairs(slaves) do
+   -- slave.host
+   -- slave.port
+   -- slave.pending-commands
+   -- etc.
+end
+```
+
+[Back to TOC](#table-of-contents)
+
+
 
 Redis Authentication
 ====================
