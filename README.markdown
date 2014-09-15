@@ -569,6 +569,7 @@ The idea being that with a configuration table, perhaps specified during `init_b
 
 See `connect_via_sentinel` below for further details on Sentinel parameters.
 
+[Back to TOC](#table-of-contents)
 
 
 connector.connect_to_host
@@ -577,12 +578,16 @@ connector.connect_to_host
 
 Returns a connected redis instance, or `nil, err`. Host is a table with either a `socket` field, or `host` and `port` fields.
 
+[Back to TOC](#table-of-contents)
+
 
 connector.try_hosts
 -------------------
 `syntax: redis, errors = connector.try_hosts(hosts, options)`
 
 Iterates over a table of host parameters, and returns the first to successfully connect. Host parameters and options are as above.
+
+[Back to TOC](#table-of-contents)
 
 
 connector.connect_via_sentinel
@@ -591,6 +596,7 @@ connector.connect_via_sentinel
 
 Iterates over a table of sentinel hosts, and when connected attempts to select a master using `master_name`. If `try_slaves` is set to `true` (default is `false`) then if a master is not availble (usually during the slave promotion window for example) we try the slaves in order, in case a read only connection is better than no connection at all.
 
+[Back to TOC](#table-of-contents)
 
 
 Redis Authentication
