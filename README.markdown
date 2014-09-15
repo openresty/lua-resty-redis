@@ -508,7 +508,6 @@ if not master then
 end
 
 
-local red = redis:new()
 for _,slave in ipairs(slaves) do
    -- slave.host
    -- slave.port
@@ -518,6 +517,79 @@ end
 ```
 
 [Back to TOC](#table-of-contents)
+
+
+
+Connector Functions
+===================
+
+These are utility functions included in the `resty.redis.connector` module, for make connecting to Redis simple, given a set of parameters.
+
+The optional `options` table allows for the following defaults to be overriden:
+
+* `connect_timeout`: `100`
+* `read_timeout`: `1000`
+* `database`: `0`
+* `connect_options`: `nil`
+
+The `connect_options` field maps to the additional options table documented here: https://github.com/openresty/lua-nginx-module#tcpsockconnect 
+
+
+connector.connect
+-------------------
+`syntax: redis, err = connector.connect(params, options)`
+
+This is the most general purpose utililty, which will either connect to a given host or a discovered host using given Sentinel configuration. e.g.
+
+```lua
+local redis = require "resty.redis"
+local connector = require "resty.redis.connector"
+
+local redis = connector.connect({
+   host = {
+      host = "127.0.0.1",
+      port = 6379.
+   },
+})
+```
+
+Or in the sentinel case...
+
+```lua
+local redis = connector.connect({
+   sentinel = {
+      host = "127.0.0.1",
+      port = 26379,
+      master_name = "master",
+   },
+})
+```
+
+The idea being that with a configuration table, perhaps specified during `init_by_lua`, user applications will be able to create a connection in a uniform manner, without repeating boilerplate code.
+
+See `connect_via_sentinel` below for further details on Sentinel parameters.
+
+
+
+connector.connect_to_host
+-------------------------
+`syntax: redis, err = connector.connect_to_host(host, options)`
+
+Returns a connected redis instance, or `nil, err`. Host is a table with either a `socket` field, or `host` and `port` fields.
+
+
+connector.try_hosts
+-------------------
+`syntax: redis, errors = connector.try_hosts(hosts, options)`
+
+Iterates over a table of host parameters, and returns the first to successfully connect. Host parameters and options are as above.
+
+
+connector.connect_via_sentinel
+------------------------------
+`syntax: redis, err = connector.connect_via_sentinel(sentinels, master_name, try_slaves, options)`
+
+Iterates over a table of sentinel hosts, and when connected attempts to select a master using `master_name`. If `try_slaves` is set to `true` (default is `false`) then if a master is not availble (usually during the slave promotion window for example) we try the slaves in order, in case a read only connection is better than no connection at all.
 
 
 
