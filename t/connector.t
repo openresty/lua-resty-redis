@@ -31,7 +31,7 @@ __DATA__
             local connector = require "resty.redis.connector"
 
             local params = {
-                host = { host = "127.0.0.1", port = $TEST_NGINX_REDIS_PORT },
+                redis = { host = "127.0.0.1", port = $TEST_NGINX_REDIS_PORT },
             }
 
             local redis, err = connector.connect(params)

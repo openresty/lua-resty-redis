@@ -36,7 +36,7 @@ local SENTINEL_DEFAULTS = {
 
 local OPTIONS_DEFAULTS = {
     connect_timeout = 100,
-    read_timeout = 5000,
+    read_timeout = 1000,
     database = 0,
     connect_options = nil, -- pool, etc
 }
@@ -47,10 +47,10 @@ function _M.connect(params, options)
     if not options then options = {} end
     setmetatable(options, { __index = OPTIONS_DEFAULTS })
 
-    local host, sentinel = params.host, params.sentinel
+    local redis, sentinel = params.redis, params.sentinel
 
-    if host then
-        return _M.connect_to_host(params.host, options)
+    if redis then
+        return _M.connect_to_host(params.redis, options)
     elseif sentinel then
         setmetatable(sentinel, { __index = SENTINEL_DEFAULTS })
         return _M.connect_via_sentinel(sentinel.hosts, sentinel.master_name, sentinel.try_slaves, options)
@@ -108,6 +108,7 @@ function _M.connect_to_host(host, options)
     if socket then
         ok, err = r:connect(socket, options.connect_options)
     else
+        ngx_log(ngx_DEBUG, host.host, ":", host.port)
         ok, err = r:connect(host.host, host.port)
     end
 
