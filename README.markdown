@@ -549,7 +549,7 @@ e.g.
 local redis = require "resty.redis"
 local connector = require "resty.redis.connector"
 
-local redis = connector.connect({
+local redis, err = connector.connect({
    redis = {
       host = "127.0.0.1",
       port = 6379,
@@ -562,7 +562,7 @@ local redis = connector.connect({
 Or in the sentinel case...
 
 ```lua
-local redis = connector.connect({
+local redis, err = connector.connect({
    sentinel = {
       host = "127.0.0.1",
       port = 26379,
@@ -584,25 +584,31 @@ connector.connect_to_host
 -------------------------
 `syntax: redis, err = connector.connect_to_host(host, options)`
 
-Returns a connected redis instance, or `nil, err`. Host is a table with at least either a `socket` field, or `host` and `port` fields, plus optionally a password field.
+Returns a connected redis instance, or `nil, err`. Host is a table with at least either a `socket` field, or `host` and `port` fields, plus optionally a password field. To auto select a database, pass this in the `options` table.
 
 [Back to TOC](#table-of-contents)
 
 
 connector.try_hosts
 -------------------
-`syntax: redis, errors = connector.try_hosts(hosts, options)`
+`syntax: redis, err, previous_errors = connector.try_hosts(hosts, options)`
 
 Iterates over a table of host parameters, and returns the first to successfully connect. Host parameters and options are as per `connect_to_host` documented above.
+
+`previous_errors` is a table of connect error messages from hosts which failed to connect. For example, if you pass three hosts, and the first two fail but the third succeeds, then you will receive `redis, nil, previous_errors`, where `previous_errors` is a table containing two error messages.
+
+If none of the hosts succeed, then you will receive `nil, err, previous_errors`, where `err` is the last error message, and `previous_errors` is a table contianing all errors except the last.
 
 [Back to TOC](#table-of-contents)
 
 
 connector.connect_via_sentinel
 ------------------------------
-`syntax: redis, err = connector.connect_via_sentinel(sentinels, master_name, try_slaves, options)`
+`syntax: redis, err, previous_errors = connector.connect_via_sentinel(sentinels, master_name, try_slaves, options)`
 
 Iterates over a table of sentinel hosts, and when connected attempts to select a master using `master_name`. If `try_slaves` is set to `true` (default is `false`) then if a master is not availble (usually during the slave promotion window for example) we try the slaves in order, in case a read only connection is better than no connection at all.
+
+The `previous_errors` return value works as documented in [connector.try_hosts](#connectortry_hosts), wither as a result of failing to connect to sentinels or slaves.
 
 [Back to TOC](#table-of-contents)
 
@@ -632,7 +638,6 @@ commands like `GET` and `SET`. So one can just invoke the `auth` method on your 
         ngx.say("failed to authenticate: ", err)
         return
     end
-```
 
 where we assume that the Redis server is configured with the
 password `foobared` in the `redis.conf` file:
