@@ -137,3 +137,46 @@ set dog: OK
 set dog: OK
 --- no_error_log
 [error]
+
+
+=== TEST 4: Test connect options override
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local connector = require "resty.redis.connector"
+
+            local host = { host = "127.0.0.1", port = $TEST_NGINX_REDIS_PORT }
+            local options = { database = 1 }
+
+            local redis, err = connector.connect_to_host(host, options)
+            if not redis then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+            
+            local res, err = redis:set("dog", "an animal")
+            if not res then
+                ngx.say("failed to set dog: ", err)
+                return
+            end
+
+            ngx.say("set dog: ", res)
+
+            redis:select(2)
+            ngx.say(redis:get("dog"))
+
+            redis:select(1)
+            ngx.say(redis:get("dog"))
+
+            redis:close()
+        ';
+    }
+--- request
+    GET /t
+--- response_body
+set dog: OK
+null
+an animal
+--- no_error_log
+[error]
