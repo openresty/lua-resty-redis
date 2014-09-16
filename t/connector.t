@@ -68,17 +68,20 @@ set dog: OK
 
             local hosts = {
                 { host = "127.0.0.1", port = 1 },
+                { host = "127.0.0.1", port = 2 },
                 { host = "127.0.0.1", port = $TEST_NGINX_REDIS_PORT },
             }
 
-            local redis, err = connector.try_hosts(hosts, { connect_timeout = 100 })
+            local redis, err, previous_errors = connector.try_hosts(hosts, { connect_timeout = 100 })
             if not redis then
                 ngx.say("failed to connect: ", err)
                 return
             end
             
-            -- Print the failed connection error
-            ngx.say("connection 1 error: ", err[1])
+            -- Print the failed connection errors
+            ngx.say("connection 1 error: ", err)
+
+            ngx.say("connection 2 error: ", previous_errors[1])
 
             local res, err = redis:set("dog", "an animal")
             if not res then
@@ -96,6 +99,7 @@ set dog: OK
     GET /t
 --- response_body
 connection 1 error: connection refused
+connection 2 error: connection refused
 set dog: OK
 --- error_log
 111: Connection refused
