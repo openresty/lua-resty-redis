@@ -115,9 +115,17 @@ function _M.connect_to_host(host, options)
     local ok, err
     local socket = host.socket
     if socket then
-        ok, err = r:connect(socket, options.connect_options)
+        if options.connect_options then
+            ok, err = r:connect(socket, options.connect_options)
+        else
+            ok, err = r:connect(socket)
+        end
     else
-        ok, err = r:connect(host.host, host.port)
+        if options.connect_options then
+            ok, err = r:connect(host.host, host.port, options.connect_options)
+        else
+            ok, err = r:connect(host.host, host.port)
+        end
     end
 
     if not ok then
