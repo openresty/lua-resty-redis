@@ -105,7 +105,9 @@ end
 
 function _M.connect_to_host(host, options)
     if not host then host = {} end
+    if not options then options = {} end
     setmetatable(host, { __index = HOST_DEFAULTS })
+    setmetatable(options, { __index = OPTIONS_DEFAULTS })
 
     local r = redis.new()
     r:set_timeout(options.connect_timeout)
