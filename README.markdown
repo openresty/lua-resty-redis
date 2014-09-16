@@ -550,7 +550,7 @@ local redis = require "resty.redis"
 local connector = require "resty.redis.connector"
 
 local redis = connector.connect({
-   host = {
+   redis = {
       host = "127.0.0.1",
       port = 6379,
       socket = "unix:/path/to/unix-domain.socket", -- overides host / port, defaults to nil
@@ -572,7 +572,7 @@ local redis = connector.connect({
 })
 ```
 
-Note that the presence of a `host` field will override any `sentinel` configuration. That is, use one or the other of the above approaches, it does not make sense to use both.
+Note that the presence of `redis` configuration will override any `sentinel` configuration. That is, use one or the other of the above approaches, it does not make sense to use both.
 
 See [connect_via_sentinel](#connectorconnect_via_sentinel) below for further details on Sentinel parameters.
 
