@@ -447,7 +447,7 @@ Adds new redis commands to the `resty.redis` class. Here is an example:
 Sentinel Functions
 ==================
 
-These are utility functions for convenience when working with the Sentinel commands for service discovery.
+These are utility functions provided in the `resty.redis.sentinel` module, for convenience when working with Sentinel commands for service discovery.
 
 
 sentinel.get_master
@@ -523,7 +523,7 @@ end
 Connector Functions
 ===================
 
-These are utility functions included in the `resty.redis.connector` module, for make connecting to Redis simple, given a set of parameters.
+These are utility functions included in the `resty.redis.connector` module, for making connections to Redis simple, given a set of parameters.
 
 The optional `options` table allows for the following defaults to be overriden:
 
@@ -534,12 +534,16 @@ The optional `options` table allows for the following defaults to be overriden:
 
 The `connect_options` field maps to the additional options table documented here: https://github.com/openresty/lua-nginx-module#tcpsockconnect 
 
+[Back to TOC](#table-of-contents)
+
 
 connector.connect
 -------------------
 `syntax: redis, err = connector.connect(params, options)`
 
-This is the most general purpose utililty, which will either connect to a given host or a discovered host using given Sentinel configuration. e.g.
+This is the most general purpose utililty, which will either connect to a given host or a discovered host using given Sentinel configuration. The idea being that with a configuration table, user applications are able to create a connection in a uniform manner, without repeating boilerplate code.
+
+e.g.
 
 ```lua
 local redis = require "resty.redis"
@@ -548,7 +552,9 @@ local connector = require "resty.redis.connector"
 local redis = connector.connect({
    host = {
       host = "127.0.0.1",
-      port = 6379.
+      port = 6379,
+      socket = "unix:/path/to/unix-domain.socket", -- overides host / port, defaults to nil
+      password = "mypassword", -- defaults to nil
    },
 })
 ```
@@ -560,14 +566,16 @@ local redis = connector.connect({
    sentinel = {
       host = "127.0.0.1",
       port = 26379,
-      master_name = "master",
+      master_name = "master", -- default is "mymaster"
+      try_slaves = true, -- default is false
    },
 })
 ```
 
-The idea being that with a configuration table, perhaps specified during `init_by_lua`, user applications will be able to create a connection in a uniform manner, without repeating boilerplate code.
+Note that the presence of a `host` field will override any `sentinel` configuration. That is, use one or the other of the above approaches, it does not make sense to use both.
 
-See `connect_via_sentinel` below for further details on Sentinel parameters.
+See [connect_via_sentinel](#connectorconnect_via_sentinel) below for further details on Sentinel parameters.
+
 
 [Back to TOC](#table-of-contents)
 
@@ -576,7 +584,7 @@ connector.connect_to_host
 -------------------------
 `syntax: redis, err = connector.connect_to_host(host, options)`
 
-Returns a connected redis instance, or `nil, err`. Host is a table with either a `socket` field, or `host` and `port` fields.
+Returns a connected redis instance, or `nil, err`. Host is a table with at least either a `socket` field, or `host` and `port` fields, plus optionally a password field.
 
 [Back to TOC](#table-of-contents)
 
@@ -585,7 +593,7 @@ connector.try_hosts
 -------------------
 `syntax: redis, errors = connector.try_hosts(hosts, options)`
 
-Iterates over a table of host parameters, and returns the first to successfully connect. Host parameters and options are as above.
+Iterates over a table of host parameters, and returns the first to successfully connect. Host parameters and options are as per `connect_to_host` documented above.
 
 [Back to TOC](#table-of-contents)
 
