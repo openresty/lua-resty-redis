@@ -67,12 +67,15 @@ function _M.connect_via_sentinel(sentinels, master_name, try_slaves, options)
 
     local master, err = sentinel.get_master(sentnl, master_name)
     if master then
+        sentnl:set_keepalive()
         return _M.connect_to_host(master, options)
     else
         if not try_slaves then
             return nil, err
         else
             local slaves, err = sentinel.get_slaves(sentnl, master_name)
+            sentnl:set_keepalive()
+
             if not slaves then
                 return nil, err
             end
