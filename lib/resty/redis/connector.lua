@@ -67,26 +67,30 @@ function _M.connect_via_sentinel(sentinels, master_name, try_slaves, options)
 
     local master, err = sentinel.get_master(sentnl, master_name)
     if master then
-        sentnl:set_keepalive()
-        return _M.connect_to_host(master, options)
-    else
-        if not try_slaves then
-            return nil, err
-        else
-            local slaves, err = sentinel.get_slaves(sentnl, master_name)
+        local redis, err = _M.connect_to_host(master, options)
+        if redis then
             sentnl:set_keepalive()
-
-            if not slaves then
+            return redis, err
+        else
+            if not try_slaves then
                 return nil, err
-            end
+            else
+                local slaves, err = sentinel.get_slaves(sentnl, master_name)
+                sentnl:set_keepalive()
 
-            local slave, err, previous_errors = _M.try_hosts(slaves, options)
-            if not slave then
-                return nil, err, previous_errors
-            end
+                if not slaves then
+                    return nil, err
+                end
 
-            return slave
+                local slave, err, previous_errors = _M.try_hosts(slaves, options)
+                if not slave then
+                    return nil, err, previous_errors
+                end
+
+                return slave
+            end
         end
+    else
     end
 end
 
@@ -132,7 +136,7 @@ function _M.connect_to_host(host, options)
     end
 
     if not ok then
-        ngx_log(ngx_ERR, err)
+        ngx_log(ngx_ERR, err, " for ", host.host, ":", host.port)
         return nil, err
     else
         r:set_timeout(self, options.read_timeout)
