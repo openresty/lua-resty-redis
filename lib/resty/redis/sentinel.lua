@@ -28,8 +28,8 @@ end
 function _M.get_slaves(sentinel, master_name)
     local res, err = sentinel:sentinel("slaves", master_name)
 
-    if type(res) == "table" then
-        local hosts = tbl_new(#res)
+    if res and type(res) == "table" then
+        local hosts = tbl_new(#res, 0)
         for _,slave in ipairs(res) do
             local num_recs = #slave
             local host = tbl_new(0, num_recs + 1)
