@@ -610,6 +610,16 @@ Iterates over a table of sentinel hosts, and when connected attempts to select a
 
 The `previous_errors` return value works as documented in [connector.try_hosts](#connectortry_hosts), wither as a result of failing to connect to sentinels or slaves.
 
+```lua
+local sentinels = {
+    { host = "127.0.0.1", port = 26379 },
+    { host = "192.168.1.1" port = 23679 },
+    { host = "192.168.1.2" port = 23679 },
+}
+
+local redis, err, previous_errors = connector.connect_via_sentinel(sentinels, "mymaster", true)
+```
+
 [Back to TOC](#table-of-contents)
 
 
