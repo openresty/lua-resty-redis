@@ -40,7 +40,7 @@ __DATA__
 --- request
 GET /t
 --- response_body
-size: 155
+size: 156
 --- no_error_log
 [error]
 
