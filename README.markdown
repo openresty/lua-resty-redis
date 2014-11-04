@@ -24,6 +24,14 @@ Table of Contents
     * [array_to_hash](#array_to_hash)
     * [read_reply](#read_reply)
     * [add_commands](#add_commands)
+* [Sentinel Functions](#sentinel-functions)
+    * [get_master](#sentinelget_master)
+    * [get_slaves](#sentinelget_slaves)
+* [Connector Functions](#connector-functions)
+    * [connect](#connectorconnect)
+    * [connect_via_sentinel](#connectorconnect_via_sentinel)
+    * [try_hosts](#connectortry_hosts)
+    * [connect_to_host](#connectorconnect_to_host)
 * [Redis Authentication](#redis-authentication)
 * [Redis Transactions](#redis-transactions)
 * [Load Balancing and Failover](#load-balancing-and-failover)
@@ -435,6 +443,186 @@ Adds new redis commands to the `resty.redis` class. Here is an example:
 
 [Back to TOC](#table-of-contents)
 
+
+Sentinel Functions
+==================
+
+These are utility functions provided in the `resty.redis.sentinel` module, for convenience when working with Sentinel commands for service discovery.
+
+
+sentinel.get_master
+------------
+`syntax: redis, err = sentinel.get_master(sentinel, master_name)`
+
+Returns the current master from sentinel, or `nil, err`. e.g.
+
+```lua
+local redis = require "resty.redis"
+local redis_sentinel = require "resty.redis.sentinel"
+
+local sentinel = redis:new()
+
+local ok, err = sentinel:connect("127.0.0.1", 26379)
+if not ok then
+   ngx.say("failed to connect: ", err)
+   return
+end
+
+local master, err = redis_sentinel.get_master(sentinel, "my_master_name")
+if not master then
+   ngx.say("failed to get master: ", err)
+   return
+end
+
+
+local red = redis:new()
+local ok, err red:connect(master.host, master.port)
+-- etc.
+```
+
+[Back to TOC](#table-of-contents)
+
+
+sentinel.get_slaves
+------------
+`syntax: slaves, err = sentinel.get_slaves(sentinel, master_name)`
+
+Returns the available slaves from sentinel, or `nil, err`. e.g.
+
+```lua
+local redis = require "resty.redis"
+local redis_sentinel = require "resty.redis.sentinel"
+
+local sentinel = redis:new()
+
+local ok, err = sentinel:connect("127.0.0.1", 26379)
+if not ok then
+   ngx.say("failed to connect: ", err)
+   return
+end
+
+local slaves, err = redis_sentinel.get_slaves(sentinel, "my_master_name")
+if not master then
+   ngx.say("failed to get master: ", err)
+   return
+end
+
+
+for _,slave in ipairs(slaves) do
+   -- slave.host
+   -- slave.port
+   -- slave.pending-commands
+   -- etc.
+end
+```
+
+[Back to TOC](#table-of-contents)
+
+
+
+Connector Functions
+===================
+
+These are utility functions included in the `resty.redis.connector` module, for making connections to Redis simple, given a set of parameters.
+
+The optional `options` table allows for the following defaults to be overriden:
+
+* `connect_timeout`: `100`
+* `read_timeout`: `1000`
+* `database`: `0`
+* `connect_options`: `nil`
+
+The `connect_options` field maps to the additional options table documented here: https://github.com/openresty/lua-nginx-module#tcpsockconnect 
+
+[Back to TOC](#table-of-contents)
+
+
+connector.connect
+-------------------
+`syntax: redis, err = connector.connect(params, options)`
+
+This is the most general purpose utililty, which will either connect to a given host or a discovered host using given Sentinel configuration. The idea being that with a configuration table, user applications are able to create a connection in a uniform manner, without repeating boilerplate code.
+
+e.g.
+
+```lua
+local redis = require "resty.redis"
+local connector = require "resty.redis.connector"
+
+local redis, err = connector.connect({
+   redis = {
+      host = "127.0.0.1",
+      port = 6379,
+      socket = "unix:/path/to/unix-domain.socket", -- overides host / port, defaults to nil
+      password = "mypassword", -- defaults to nil
+   },
+})
+```
+
+Or in the sentinel case...
+
+```lua
+local redis, err = connector.connect({
+   sentinel = {
+      host = "127.0.0.1",
+      port = 26379,
+      master_name = "master", -- default is "mymaster"
+      try_slaves = true, -- default is false
+   },
+})
+```
+
+Note that the presence of `redis` configuration will override any `sentinel` configuration. That is, use one or the other of the above approaches, it does not make sense to use both.
+
+See [connect_via_sentinel](#connectorconnect_via_sentinel) below for further details on Sentinel parameters.
+
+
+[Back to TOC](#table-of-contents)
+
+
+connector.connect_to_host
+-------------------------
+`syntax: redis, err = connector.connect_to_host(host, options)`
+
+Returns a connected redis instance, or `nil, err`. Host is a table with at least either a `socket` field, or `host` and `port` fields, plus optionally a password field. To auto select a database, pass this in the `options` table.
+
+[Back to TOC](#table-of-contents)
+
+
+connector.try_hosts
+-------------------
+`syntax: redis, err, previous_errors = connector.try_hosts(hosts, options)`
+
+Iterates over a table of host parameters, and returns the first to successfully connect. Host parameters and options are as per `connect_to_host` documented above.
+
+`previous_errors` is a table of connect error messages from hosts which failed to connect. For example, if you pass three hosts, and the first two fail but the third succeeds, then you will receive `redis, nil, previous_errors`, where `previous_errors` is a table containing two error messages.
+
+If none of the hosts succeed, then you will receive `nil, err, previous_errors`, where `err` is the last error message, and `previous_errors` is a table contianing all errors except the last.
+
+[Back to TOC](#table-of-contents)
+
+
+connector.connect_via_sentinel
+------------------------------
+`syntax: redis, err, previous_errors = connector.connect_via_sentinel(sentinels, master_name, try_slaves, options)`
+
+Iterates over a table of sentinel hosts, and when connected attempts to select a master using `master_name`. If `try_slaves` is set to `true` (default is `false`) then if a master is not availble (usually during the slave promotion window for example) we try the slaves in order, in case a read only connection is better than no connection at all.
+
+The `previous_errors` return value works as documented in [connector.try_hosts](#connectortry_hosts), wither as a result of failing to connect to sentinels or slaves.
+
+```lua
+local sentinels = {
+    { host = "127.0.0.1", port = 26379 },
+    { host = "192.168.1.1" port = 23679 },
+    { host = "192.168.1.2" port = 23679 },
+}
+
+local redis, err, previous_errors = connector.connect_via_sentinel(sentinels, "mymaster", true)
+```
+
+[Back to TOC](#table-of-contents)
+
+
 Redis Authentication
 ====================
 
@@ -460,7 +648,6 @@ commands like `GET` and `SET`. So one can just invoke the `auth` method on your 
         ngx.say("failed to authenticate: ", err)
         return
     end
-```
 
 where we assume that the Redis server is configured with the
 password `foobared` in the `redis.conf` file:
