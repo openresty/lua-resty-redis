@@ -1,4 +1,4 @@
-local redis = require "resty.redis"
+local redis = require "redis"
 local bit = require "bit"
 
 local setmetatable = setmetatable
@@ -77,6 +77,8 @@ local lshift, rshift = bit.lshift, bit.rshift
 -- Depends on luajit bitop extension.
 local function crc16(str)
     local crc = 0
+    -- prevent the cases when client pass a wrong type of argument
+    str = tostring(str)
     for i = 1, #str do
         local b = byte(str, i)
         crc = bxor(band(lshift(crc, 8), 0xffff), XMODEMCRC16Lookup[band(bxor(rshift(crc, 8), b), 0xff) + 1])
@@ -88,11 +90,10 @@ local clusters = new_tab(0, 20)
 
 local function get_redis_link(host, port, timeout)
     local r = redis:new()
-
     r:set_timeout(timeout)
-    r:connect(host, port)
+    local ok, err = r:connect(host, port)
 
-    return r
+    return r, ok, err
 end
 
 local function set_node_name(n)
@@ -131,7 +132,6 @@ local mt = { __index = _M }
 
 function _M.new(self, cluster_id, startup_nodes, opt)
     if clusters[cluster_id] == nil then
-        
         clusters[cluster_id] = {
             startup_nodes = startup_nodes,
             nodes = nil,
@@ -166,65 +166,66 @@ function _M.initialize(self)
 
     for i = 1, #startup_nodes do
         local node = startup_nodes[i]
-        local r = get_redis_link(node[1], node[2], cluster.timeout)
-        local results, err = r:cluster("nodes")
+        local r, ok, err = get_redis_link(node[1], node[2], cluster.timeout)
 
-        cluster.nodes = new_tab(500, 0)
-        cluster.slots = new_tab(REDIS_CLUSTER_HASH_SLOTS, 0)
+        if ok then
+            local results, err = r:cluster("nodes")
+
+            cluster.nodes = new_tab(500, 0)
+            cluster.slots = new_tab(REDIS_CLUSTER_HASH_SLOTS, 0)
         
-        if results then
-            local lines = string_split(results, char(10), 1000)
-            for line_index = 1, #lines do
-                local line = lines[line_index]
-                local fields = string_split(line, " ")
-                if #fields > 1 then
-                    local addr_str = fields[2]
-                    local addr = nil
+            if results then
+                local lines = string_split(results, char(10), 1000)
+                for line_index = 1, #lines do
+                    local line = lines[line_index]
+                    local fields = string_split(line, " ")
+                    if #fields > 1 then
+                        local addr_str = fields[2]
+                        local addr = nil
 
-                    if addr_str == ":0" then
-                        addr = { node[1], 
+                        if addr_str == ":0" then
+                            addr = { node[1], 
                                  tonumber(node[2]), 
                                  node[1] .. ":" .. tostring(node[2]) }
-                    else
-                        local host_port = string_split(addr_str, ":", 2)
-                        addr = { host_port[1], 
+                        else
+                            local host_port = string_split(addr_str, ":", 2)
+                            addr = { host_port[1], 
                                  tonumber(host_port[2]), 
                                  addr_str }
-                    end
-                    cluster.nodes[#(cluster.nodes) + 1] = addr
-                    
-                    local cluster_slots = cluster.slots
-
-                    for slot_index = 9, #fields do
-                        local slot = fields[slot_index]
-
-                        if not slot then 
-                            break 
                         end
-                        
-                        if sub(slot, 1, 1) ~= "[" then
-                            local range = string_split(slot, "-", 2)
-                            local first = tonumber(range[1])
-                            local last = first
-                            if #range >= 2 then
-                                last = tonumber(range[2])
-                            end
+                        cluster.nodes[#(cluster.nodes) + 1] = addr
+                    
+                        local cluster_slots = cluster.slots
 
-                            for ind = first + 1, last + 1 do
-                                cluster_slots[ind] = addr
+                        for slot_index = 9, #fields do
+                            local slot = fields[slot_index]
+                            if not slot then 
+                                break 
+                            end
+                        
+                            if sub(slot, 1, 1) ~= "[" then
+                                local range = string_split(slot, "-", 2)
+                                local first = tonumber(range[1])
+                                local last = first
+                                if #range >= 2 then
+                                    last = tonumber(range[2])
+                                end
+
+                                for ind = first + 1, last + 1 do
+                                    cluster_slots[ind] = addr
+                                end
                             end
                         end
                     end
                 end
+                self:populate_startup_nodes()
+                cluster.initialized = true
+                cluster.refresh_table_asap = false
+                r:set_keepalive(cluster.keepalive_duration, cluster.keepalive_size)
+                break
+            else
+                r:close()
             end
-
-            self:populate_startup_nodes()
-            cluster.initialized = true
-            cluster.refresh_table_asap = false
-            r:set_keepalive(cluster.keepalive_duration, cluster.keepalive_size)
-            break
-        else
-            r:close()
         end
     end
 end
@@ -294,7 +295,10 @@ function _M.get_random_connection(self)
     
     for i = 1, #startup_nodes do
         local node = startup_nodes[i]
-        local r = get_redis_link(node[1], node[2], cluster.timeout)
+        local r, ok, err  = get_redis_link(node[1], node[2], cluster.timeout)
+        if ( not ok ) then
+            break
+        end 
         local result, err = r:ping()
         if result == "PONG" then
             return r
@@ -313,12 +317,13 @@ function _M.get_connection_by_slot(self, slot)
         return self:get_random_connection()
     end
 
+    if node == nil then
+    end
     return get_redis_link(node[1], node[2], cluster.timeout)
 end
 
 function _M.send_cluster_command(self, cmd, ...)
     local cluster = clusters[self.cluster_id]
-
     if cluster.initialized == false then
         return nil, "Uninitialized cluster"
     end
@@ -345,49 +350,56 @@ function _M.send_cluster_command(self, cmd, ...)
         local slot = self:keyslot(key)
 
         local r = nil
+        local ok = true
+        local err
 
         if try_random_node == true then
             r = self:get_random_connection()
             try_random_node = false
         else
-            r = self:get_connection_by_slot(slot)
+            r, ok, err = self:get_connection_by_slot(slot)
         end
 
-        if asking == true then
-            -- TODO: pipeline
-            r:asking()
-        end
+        -- 
+        if r ~= nil and ok then
+            if asking == true then
+                -- TODO: pipeline
+                r:asking()
+            end
         
-        asking = false
-
-        local result, err = r[cmd](r, ...)
-        r:set_keepalive(cluster.keepalive_duration, cluster.keepalive_size)
-
-        if err == nil and result ~= nil then
-            return result, err
-        end
-
-        last_error = err
-        
-        local err_split = string_split(err, " ")
-
-        if err_split[1] == "ASK" then
-            asking = true
-        end
-
-        if asking == true or err_split[1] == "MOVED" then
-            if asking == false then
-                cluster.refresh_table_asap = true
+ 
+            asking = false
+            local result, err = r[cmd](r, ...)
+            if err == nil and result ~= nil then
+                r:set_keepalive(cluster.keepalive_duration, cluster.keepalive_size)
+                return result, err
             end
 
-            local newslot = tonumber(err_split[2]) + 1
-            local node_ip_port = string_split(err_split[3], ":")
+            last_error = err
+        
+            local err_split = string_split(err, " ")
 
-            local addr = { node_ip_port[1], tonumber(node_ip_port[2]), err_split[3]}
+            if err_split[1] == "ASK" then
+                asking = true
+            end
 
-            cluster.slots[newslot] = addr 
+            if asking == true or err_split[1] == "MOVED" then
+                if asking == false then
+                    cluster.refresh_table_asap = true
+                end
+
+                local newslot = tonumber(err_split[2]) + 1
+                local node_ip_port = string_split(err_split[3], ":")
+
+                local addr = { node_ip_port[1], tonumber(node_ip_port[2]), err_split[3]}
+
+                cluster.slots[newslot] = addr 
+            else
+                try_random_node = true
+            end
         else
-            try_random_node = true
+            cluster.refresh_table_asap = true 
+            self:initialize()
         end
     end
     return nil, last_error
