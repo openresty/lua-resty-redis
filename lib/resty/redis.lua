@@ -52,6 +52,7 @@ local commands = {
     "monitor",           "move",              "mset",
     "msetnx",            "multi",             "object",
     "persist",           "pexpire",           "pexpireat",
+    "pfadd",             "pfcount",           "pfmerge",
     "ping",              "psetex",       --[[ "psubscribe", ]]
     "pttl",
     "publish",      --[[ "punsubscribe", ]]   "pubsub",
