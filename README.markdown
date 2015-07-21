@@ -118,7 +118,7 @@ Synopsis
 
                 for i, res in ipairs(results) do
                     if type(res) == "table" then
-                        if not res[1] then
+                        if res[1] == false then
                             ngx.say("failed to run command ", i, ": ", res[2])
                         else
                             -- process the table value
