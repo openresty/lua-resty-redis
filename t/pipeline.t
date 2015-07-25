@@ -221,7 +221,7 @@ flushall: OK
 
             for i, res in ipairs(results) do
                 if type(res) == "table" then
-                    if not res[1] then
+                    if res[1] == false then
                         ngx.say("failed to run command ", i, ": ", res[2])
                     else
                         ngx.say("cmd ", i, ": ", res)
@@ -257,6 +257,73 @@ cmd 1: OK
 cmd 2: OK
 cmd 3: Marry
 cmd 4: Bob
+--- no_error_log
+[error]
+
+
+
+=== TEST 5: redis return error in pipeline
+--- http_config eval: $::HttpConfig
+--- config
+    location /test {
+        content_by_lua '
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:set_timeout(1000) -- 1 sec
+
+            local ok, err = red:connect("127.0.0.1", 6379)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            local res, err = red:del("dog")
+            if not res then
+                ngx.say("failed to del dog: ", err)
+                return
+            end
+
+            red:init_pipeline()
+            red:hkeys("dog")
+            red:set("dog", "an animal")
+            red:hkeys("dog")
+            red:get("dog")
+            local results, err = red:commit_pipeline()
+            if not results then
+                ngx.say("failed to commit the pipelined requests: ", err)
+                return
+            end
+
+            for i, res in ipairs(results) do
+                if type(res) == "table" then
+                    if res[1] == false then
+                        ngx.say("failed to run command ", i, ": ", res[2])
+                    else
+                        ngx.say("cmd ", i, ": ", res)
+                    end
+                else
+                    -- process the scalar value
+                    ngx.say("cmd ", i, ": ", res)
+                end
+            end
+
+            -- put it into the connection pool of size 100,
+            -- with 0 idle timeout
+            local ok, err = red:set_keepalive(0, 100)
+            if not ok then
+                ngx.say("failed to set keepalive: ", err)
+                return
+            end
+        ';
+    }
+--- request
+    GET /test
+--- response_body
+cmd 1: 
+cmd 2: OK
+failed to run command 3: WRONGTYPE Operation against a key holding the wrong kind of value
+cmd 4: an animal
 --- no_error_log
 [error]
 
