@@ -6,11 +6,13 @@ local byte = string.byte
 local tcp = ngx.socket.tcp
 local concat = table.concat
 local null = ngx.null
+local type = type
 local pairs = pairs
 local unpack = unpack
 local setmetatable = setmetatable
 local tonumber = tonumber
-local error = error
+local tostring = tostring
+--local error = error
 
 
 local ok, new_tab = pcall(require, "table.new")
