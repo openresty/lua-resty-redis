@@ -4,7 +4,6 @@
 local sub = string.sub
 local byte = string.byte
 local tcp = ngx.socket.tcp
-local concat = table.concat
 local null = ngx.null
 local type = type
 local pairs = pairs
@@ -268,8 +267,9 @@ local function _gen_req(args)
         end
     end
 
-    -- it is faster to do string concatenation on the Lua land
-    return concat(req)
+    -- it is much faster to do string concatenation on the C land
+    -- in some real world (large number of string in Lua)
+    return req
 end
 
 
