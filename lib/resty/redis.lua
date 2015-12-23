@@ -268,7 +268,7 @@ local function _gen_req(args)
     end
 
     -- it is much faster to do string concatenation on the C land
-    -- in some real world (large number of string in Lua)
+    -- in real world (large number of strings in the Lua VM)
     return req
 end
 
