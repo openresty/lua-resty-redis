@@ -210,7 +210,7 @@ local function _read_reply(self, sock)
             return null
         end
 
-        local vals = new_tab(n, 0);
+        local vals = new_tab(n, 0)
         local nvals = 0
         for i = 1, n do
             local res, err = _read_reply(self, sock)
