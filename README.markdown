@@ -56,14 +56,14 @@ http://wiki.nginx.org/HttpLuaModule
 This Lua library takes advantage of ngx_lua's cosocket API, which ensures
 100% nonblocking behavior.
 
-Note that at least [ngx_lua 0.5.14](https://github.com/chaoslawful/lua-nginx-module/tags) or [ngx_openresty 1.2.1.14](http://openresty.org/#Download) is required.
+Note that at least [ngx_lua 0.5.14](https://github.com/chaoslawful/lua-nginx-module/tags) or [OpenResty 1.2.1.14](http://openresty.org/#Download) is required.
 
 Synopsis
 ========
 
 ```lua
     # you do not need the following line if you are using
-    # the ngx_openresty bundle:
+    # the OpenResty bundle:
     lua_package_path "/path/to/lua-resty-redis/lib/?.lua;;";
 
     server {
@@ -598,7 +598,7 @@ each request.
 Installation
 ============
 
-If you are using the ngx_openresty bundle (http://openresty.org ), then
+If you are using the OpenResty bundle (http://openresty.org ), then
 you do not need to do anything because it already includes and enables
 lua-resty-redis by default. And you can just use it in your Lua code,
 as in
@@ -671,7 +671,7 @@ Copyright and License
 
 This module is licensed under the BSD license.
 
-Copyright (C) 2012-2015, by Yichun Zhang (agentzh) <agentzh@gmail.com>, CloudFlare Inc.
+Copyright (C) 2012-2016, by Yichun Zhang (agentzh) <agentzh@gmail.com>, CloudFlare Inc.
 
 All rights reserved.
 
