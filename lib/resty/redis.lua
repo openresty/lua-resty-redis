@@ -248,23 +248,23 @@ end
 local function _gen_req(args)
     local nargs = #args
 
-    local req = new_tab(nargs + 1, 0)
+    local req = new_tab(nargs * 5 + 1, 0)
     req[1] = "*" .. nargs .. "\r\n"
-    local nbits = 1
+    local nbits = 2
 
     for i = 1, nargs do
         local arg = args[i]
-        nbits = nbits + 1
-
-        if not arg then
-            req[nbits] = "$-1\r\n"
-
-        else
-            if type(arg) ~= "string" then
-                arg = tostring(arg)
-            end
-            req[nbits] = "$" .. #arg .. "\r\n" .. arg .. "\r\n"
+        if type(arg) ~= "string" then
+            arg = tostring(arg)
         end
+
+        req[nbits] = "$"
+        req[nbits + 1] = #arg
+        req[nbits + 2] = "\r\n"
+        req[nbits + 3] = arg
+        req[nbits + 4] = "\r\n"
+
+        nbits = nbits + 5
     end
 
     -- it is much faster to do string concatenation on the C land
