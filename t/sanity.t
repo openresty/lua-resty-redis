@@ -46,7 +46,7 @@ __DATA__
                 return
             end
 
-            res, err = red:set("dog", "an animal")
+            local res, err = red:set("dog", "an animal")
             if not res then
                 ngx.say("failed to set dog: ", err)
                 return
@@ -239,7 +239,7 @@ get nokey: 0 (table)
                 return
             end
 
-            res, err = red:set("connections", 10)
+            local res, err = red:set("connections", 10)
             if not res then
                 ngx.say("failed to set connections: ", err)
                 return
@@ -344,7 +344,7 @@ connections: 1
                 return
             end
 
-            res, err = red:incr("connections", 12)
+            local res, err = red:incr("connections", 12)
             if not res then
                 ngx.say("failed to set connections: ", res, ": ", err)
                 return
@@ -593,7 +593,7 @@ reused times: 1
                 return
             end
 
-            res, err = red:set("dog", "an animal")
+            local res, err = red:set("dog", "an animal")
             if not res then
                 ngx.say("failed to set dog: ", err)
                 return
@@ -653,7 +653,7 @@ res: ["an animal",null,"an animal"]
                 return
             end
 
-            res, err = red:hmset("animals", { dog = "bark", cat = "meow", cow = "moo" })
+            local res, err = red:hmset("animals", { dog = "bark", cat = "meow", cow = "moo" })
             if not res then
                 ngx.say("failed to set animals: ", err)
                 return
@@ -700,3 +700,77 @@ cow: moo
 --- no_error_log
 [error]
 
+
+
+=== TEST 13: boolean args
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:set_timeout(1000) -- 1 sec
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            ok, err = red:set("foo", true)
+            if not ok then
+                ngx.say("failed to set: ", err)
+                return
+            end
+
+            local res, err = red:get("foo")
+            if not res then
+                ngx.say("failed to get: ", err)
+                return
+            end
+
+            ngx.say("foo: ", res, ", type: ", type(res))
+
+            ok, err = red:set("foo", false)
+            if not ok then
+                ngx.say("failed to set: ", err)
+                return
+            end
+
+            local res, err = red:get("foo")
+            if not res then
+                ngx.say("failed to get: ", err)
+                return
+            end
+
+            ngx.say("foo: ", res, ", type: ", type(res))
+
+            ok, err = red:set("foo", nil)
+            if not ok then
+                ngx.say("failed to set: ", err)
+            end
+
+            local res, err = red:get("foo")
+            if not res then
+                ngx.say("failed to get: ", err)
+                return
+            end
+
+            ngx.say("foo: ", res, ", type: ", type(res))
+
+            local ok, err = red:set_keepalive(10, 10)
+            if not ok then
+                ngx.say("failed to set_keepalive: ", err)
+            end
+        ';
+    }
+--- request
+GET /t
+--- response_body
+foo: true, type: string
+foo: false, type: string
+failed to set: ERR wrong number of arguments for 'set' command
+foo: false, type: string
+--- no_error_log
+[error]
