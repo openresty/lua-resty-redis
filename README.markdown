@@ -405,6 +405,9 @@ add_commands
 ------------
 `syntax: hash = redis.add_commands(cmd_name1, cmd_name2, ...)`
 
+*WARNING* this method is now deprecated since we already do automatic Lua method generation
+for any redis commands the user attempts to use and thus we no longer need this.
+
 Adds new redis commands to the `resty.redis` class. Here is an example:
 
 ```lua
