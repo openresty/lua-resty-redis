@@ -240,7 +240,9 @@ local function _read_reply(self, sock)
         return false, sub(line, 2)
 
     else
-        return nil, "unkown prefix: \"" .. prefix .. "\""
+        -- adding tostring method to avoid concatenate "nil" value error 
+        -- when 'line' is equal to an empty string, 'prefix' will be equal to nil
+        return nil, "unkown prefix: \"" .. tostring(prefix) .. "\""
     end
 end
 
