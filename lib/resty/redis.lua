@@ -11,6 +11,7 @@ local unpack = unpack
 local setmetatable = setmetatable
 local tonumber = tonumber
 local tostring = tostring
+local rawget = rawget
 --local error = error
 
 
@@ -20,67 +21,25 @@ if not ok or type(new_tab) ~= "function" then
 end
 
 
-local _M = new_tab(0, 155)
+-- #common_cmds(36) + #sub_commands(2) + #unsub_commands(2)
+-- + others(24) + reservation(10) = 64
+local _M = new_tab(0, 64)
 _M._VERSION = '0.24'
 
 
-local commands = {
-    "append",            "auth",              "bgrewriteaof",
-    "bgsave",            "bitcount",          "bitop",
-    "blpop",             "brpop",
-    "brpoplpush",        "client",            "config",
-    "dbsize",
-    "debug",             "decr",              "decrby",
-    "del",               "discard",           "dump",
-    "echo",
-    "eval",              "exec",              "exists",
-    "expire",            "expireat",          "flushall",
-    "flushdb",           "get",               "getbit",
-    "getrange",          "getset",            "hdel",
-    "hexists",           "hget",              "hgetall",
-    "hincrby",           "hincrbyfloat",      "hkeys",
-    "hlen",
-    "hmget",             --[[ "hmset", ]]     "hscan",
-    "hset",
-    "hsetnx",            "hvals",             "incr",
-    "incrby",            "incrbyfloat",       "info",
-    "keys",
-    "lastsave",          "lindex",            "linsert",
-    "llen",              "lpop",              "lpush",
-    "lpushx",            "lrange",            "lrem",
-    "lset",              "ltrim",             "mget",
-    "migrate",
-    "monitor",           "move",              "mset",
-    "msetnx",            "multi",             "object",
-    "persist",           "pexpire",           "pexpireat",
-    "ping",              "psetex",       --[[ "psubscribe", ]]
-    "pttl",
-    "publish",      --[[ "punsubscribe", ]]   "pubsub",
-    "quit",
-    "randomkey",         "rename",            "renamenx",
-    "restore",
-    "rpop",              "rpoplpush",         "rpush",
-    "rpushx",            "sadd",              "save",
-    "scan",              "scard",             "script",
-    "sdiff",             "sdiffstore",
-    "select",            "set",               "setbit",
-    "setex",             "setnx",             "setrange",
-    "shutdown",          "sinter",            "sinterstore",
-    "sismember",         "slaveof",           "slowlog",
-    "smembers",          "smove",             "sort",
-    "spop",              "srandmember",       "srem",
-    "sscan",
-    "strlen",       --[[ "subscribe", ]]      "sunion",
-    "sunionstore",       "sync",              "time",
-    "ttl",
-    "type",         --[[ "unsubscribe", ]]    "unwatch",
-    "watch",             "zadd",              "zcard",
-    "zcount",            "zincrby",           "zinterstore",
-    "zrange",            "zrangebyscore",     "zrank",
-    "zrem",              "zremrangebyrank",   "zremrangebyscore",
-    "zrevrange",         "zrevrangebyscore",  "zrevrank",
-    "zscan",
-    "zscore",            "zunionstore",       "evalsha"
+local common_cmds = {
+    "get",      "set",          "mget",     "mset",
+    "del",      "incr",         "decr",                 -- Strings
+    "llen",     "lindex",       "lpop",     "lpush",
+    "lrange",   "linsert",                              -- Lists
+    "hexists",  "hget",         "hset",     "hmget",
+    --[[ "hmset", ]]            "hdel",                 -- Hashes
+    "smembers", "sismember",    "sadd",     "srem",
+    "sdiff",    "sinter",       "sunion",               -- Sets
+    "zrange",   "zrangebyscore", "zrank",   "zadd",
+    "zrem",     "zincrby",                              -- Sorted Sets
+    "auth",     "eval",         "expire",   "script",
+    "sort"                                              -- Others
 }
 
 
@@ -107,7 +66,7 @@ end
 
 
 function _M.set_timeout(self, timeout)
-    local sock = self.sock
+    local sock = rawget(self, "sock")
     if not sock then
         return nil, "not initialized"
     end
@@ -117,7 +76,7 @@ end
 
 
 function _M.connect(self, ...)
-    local sock = self.sock
+    local sock = rawget(self, "sock")
     if not sock then
         return nil, "not initialized"
     end
@@ -129,12 +88,12 @@ end
 
 
 function _M.set_keepalive(self, ...)
-    local sock = self.sock
+    local sock = rawget(self, "sock")
     if not sock then
         return nil, "not initialized"
     end
 
-    if self.subscribed then
+    if rawget(self, "subscribed") then
         return nil, "subscribed state"
     end
 
@@ -143,7 +102,7 @@ end
 
 
 function _M.get_reused_times(self)
-    local sock = self.sock
+    local sock = rawget(self, "sock")
     if not sock then
         return nil, "not initialized"
     end
@@ -153,7 +112,7 @@ end
 
 
 local function close(self)
-    local sock = self.sock
+    local sock = rawget(self, "sock")
     if not sock then
         return nil, "not initialized"
     end
@@ -166,7 +125,7 @@ _M.close = close
 local function _read_reply(self, sock)
     local line, err = sock:receive()
     if not line then
-        if err == "timeout" and not self.subscribed then
+        if err == "timeout" and not rawget(self, "subscribed") then
             sock:close()
         end
         return nil, err
@@ -277,14 +236,14 @@ end
 local function _do_cmd(self, ...)
     local args = {...}
 
-    local sock = self.sock
+    local sock = rawget(self, "sock")
     if not sock then
         return nil, "not initialized"
     end
 
     local req = _gen_req(args)
 
-    local reqs = self._reqs
+    local reqs = rawget(self, "_reqs")
     if reqs then
         reqs[#reqs + 1] = req
         return
@@ -312,12 +271,12 @@ end
 
 
 function _M.read_reply(self)
-    local sock = self.sock
+    local sock = rawget(self, "sock")
     if not sock then
         return nil, "not initialized"
     end
 
-    if not self.subscribed then
+    if not rawget(self, "subscribed") then
         return nil, "not subscribed"
     end
 
@@ -328,8 +287,8 @@ function _M.read_reply(self)
 end
 
 
-for i = 1, #commands do
-    local cmd = commands[i]
+for i = 1, #common_cmds do
+    local cmd = common_cmds[i]
 
     _M[cmd] =
         function (self, ...)
@@ -399,14 +358,14 @@ end
 
 
 function _M.commit_pipeline(self)
-    local reqs = self._reqs
+    local reqs = rawget(self, "_reqs")
     if not reqs then
         return nil, "no pipeline"
     end
 
     self._reqs = nil
 
-    local sock = self.sock
+    local sock = rawget(self, "sock")
     if not sock then
         return nil, "not initialized"
     end
@@ -463,6 +422,16 @@ function _M.add_commands(...)
             end
     end
 end
+
+
+setmetatable(_M, {__index = function(self, cmd)
+    local method =
+        function (self, ...)
+            return _do_cmd(self, cmd, ...)
+        end
+    _M[cmd] = method
+    return method
+end})
 
 
 return _M
