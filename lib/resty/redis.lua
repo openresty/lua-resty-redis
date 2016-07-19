@@ -22,7 +22,7 @@ end
 
 
 -- #common_cmds(36) + #sub_commands(2) + #unsub_commands(2)
--- + others(24) + reservation(10) = 64
+-- + reservation(24) = 64
 local _M = new_tab(0, 64)
 _M._VERSION = '0.24'
 
