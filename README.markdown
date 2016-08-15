@@ -51,7 +51,7 @@ Description
 
 This Lua library is a Redis client driver for the ngx_lua nginx module:
 
-http://wiki.nginx.org/HttpLuaModule
+https://github.com/openresty/lua-nginx-module/#readme
 
 This Lua library takes advantage of ngx_lua's cosocket API, which ensures
 100% nonblocking behavior.
@@ -534,7 +534,7 @@ Then the output will be
 Load Balancing and Failover
 ===========================
 
-You can trivially implement your own Redis load balancing logic yourself in Lua. Just keep a Lua table of all available Redis backend information (like host name and port numbers) and pick one server according to some rule (like round-robin or key-based hashing) from the Lua table at every request. You can keep track of the current rule state in your own Lua module's data, see http://wiki.nginx.org/HttpLuaModule#Data_Sharing_within_an_Nginx_Worker
+You can trivially implement your own Redis load balancing logic yourself in Lua. Just keep a Lua table of all available Redis backend information (like host name and port numbers) and pick one server according to some rule (like round-robin or key-based hashing) from the Lua table at every request. You can keep track of the current rule state in your own Lua module's data, see https://github.com/openresty/lua-nginx-module/#data-sharing-within-an-nginx-worker
 
 Similarly, you can implement automatic failover logic in Lua at great flexibility.
 
@@ -559,9 +559,9 @@ It is usually convenient to use the [lua-cjson](http://www.kyne.com.au/~mark/sof
 Automatic Error Logging
 =======================
 
-By default the underlying [ngx_lua](http://wiki.nginx.org/HttpLuaModule) module
+By default the underlying [ngx_lua](https://github.com/openresty/lua-nginx-module/#readme) module
 does error logging when socket errors happen. If you are already doing proper error
-handling in your own Lua code, then you are recommended to disable this automatic error logging by turning off [ngx_lua](http://wiki.nginx.org/HttpLuaModule)'s [lua_socket_log_errors](http://wiki.nginx.org/HttpLuaModule#lua_socket_log_errors) directive, that is,
+handling in your own Lua code, then you are recommended to disable this automatic error logging by turning off [ngx_lua](https://github.com/openresty/lua-nginx-module/#readme)'s [lua_socket_log_errors](https://github.com/openresty/lua-nginx-module/#lua_socket_log_errors) directive, that is,
 
 ```nginx
     lua_socket_log_errors off;
@@ -589,7 +589,7 @@ header_filter_by_lua* where the ngx_lua cosocket API is not available.
 * The `resty.redis` object instance cannot be stored in a Lua variable at the Lua module level,
 because it will then be shared by all the concurrent requests handled by the same nginx
  worker process (see
-http://wiki.nginx.org/HttpLuaModule#Data_Sharing_within_an_Nginx_Worker ) and
+https://github.com/openresty/lua-nginx-module/#data-sharing-within-an-nginx-worker ) and
 result in bad race conditions when concurrent requests are trying to use the same `resty.redis` instance
 (you would see the "bad request" or "socket busy" error to be returned from the method calls).
 You should always initiate `resty.redis` objects in function local
@@ -690,7 +690,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 See Also
 ========
-* the ngx_lua module: http://wiki.nginx.org/HttpLuaModule
+* the ngx_lua module: https://github.com/openresty/lua-nginx-module/#readme
 * the redis wired protocol specification: http://redis.io/topics/protocol
 * the [lua-resty-memcached](https://github.com/agentzh/lua-resty-memcached) library
 * the [lua-resty-mysql](https://github.com/agentzh/lua-resty-mysql) library
