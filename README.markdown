@@ -68,7 +68,7 @@ Synopsis
 
     server {
         location /test {
-            content_by_lua '
+            content_by_lua_block {
                 local redis = require "resty.redis"
                 local red = redis:new()
 
@@ -142,7 +142,7 @@ Synopsis
                 --     ngx.say("failed to close: ", err)
                 --     return
                 -- end
-            ';
+            }
         }
     }
 ```
