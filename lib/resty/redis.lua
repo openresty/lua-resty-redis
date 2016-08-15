@@ -23,7 +23,7 @@ end
 
 local _M = new_tab(0, 54)
 
-_M._VERSION = '0.24'
+_M._VERSION = '0.25'
 
 
 local common_cmds = {
