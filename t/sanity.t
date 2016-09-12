@@ -774,3 +774,56 @@ failed to set: ERR wrong number of arguments for 'set' command
 foo: false, type: string
 --- no_error_log
 [error]
+
+
+
+=== TEST 14: set and get (key with underscores)
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:set_timeout(1000) -- 1 sec
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            local res, err = red:set("a_dog", "an animal")
+            if not res then
+                ngx.say("failed to set a_dog: ", err)
+                return
+            end
+
+            ngx.say("set a_dog: ", res)
+
+            for i = 1, 2 do
+                local res, err = red:get("a_dog")
+                if err then
+                    ngx.say("failed to get a_dog: ", err)
+                    return
+                end
+
+                if not res then
+                    ngx.say("a_dog not found.")
+                    return
+                end
+
+                ngx.say("a_dog: ", res)
+            end
+
+            red:close()
+        ';
+    }
+--- request
+GET /t
+--- response_body
+set a_dog: OK
+a_dog: an animal
+a_dog: an animal
+--- no_error_log
+[error]
