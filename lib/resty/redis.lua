@@ -320,9 +320,8 @@ end
 
 
 function _M.hmset(self, hashname, ...)
-    local args = {...}
-    if #args == 1 then
-        local t = args[1]
+    if select('#', ...) == 1 then
+        local t = select(1, ...)
 
         local n = 0
         for k, v in pairs(t) do
