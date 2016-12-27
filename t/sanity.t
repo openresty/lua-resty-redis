@@ -827,3 +827,34 @@ a_dog: an animal
 a_dog: an animal
 --- no_error_log
 [error]
+
+
+
+=== TEST 15: connection refused
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:set_timeout(10000) -- 10 sec
+
+            local ok, err = red:connect("127.0.0.1", 81)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            ngx.say("connected")
+
+            red:close()
+        ';
+    }
+--- request
+GET /t
+--- response_body
+failed to connect: connection refused
+--- timeout: 3
+--- no_error_log
+[alert]
