@@ -1,8 +1,8 @@
 OPENRESTY_PREFIX=/usr/local/openresty-debug
 
-PREFIX ?=          /usr/local
-LUA_INCLUDE_DIR ?= $(PREFIX)/include
-LUA_LIB_DIR ?=     $(PREFIX)/lib/lua/$(LUA_VERSION)
+PREFIX ?=          $(shell pkg-config luajit --variable=prefix)
+LUA_INCLUDE_DIR ?= $(shell pkg-config luajit --cflags-only-I)
+LUA_LIB_DIR ?=     $(shell pkg-config luajit --variable=INSTALL_LMOD)
 INSTALL ?= install
 
 .PHONY: all test install
