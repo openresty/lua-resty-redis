@@ -38,7 +38,7 @@ local common_cmds = {
     "zrange",   "zrangebyscore", "zrank",   "zadd",
     "zrem",     "zincrby",                              -- Sorted Sets
     "auth",     "eval",         "expire",   "script",
-    "sort"                                              -- Others
+    "sort", "ping", "time"                              -- Others
 }
 
 
