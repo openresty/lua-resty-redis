@@ -199,7 +199,7 @@ local function _read_reply(self, sock)
 
     else
         -- when `line` is an empty string, `prefix` will be equal to nil.
-        return nil, "unkown prefix: \"" .. tostring(prefix) .. "\""
+        return nil, "unknown prefix: \"" .. tostring(prefix) .. "\""
     end
 end
 
