@@ -214,7 +214,11 @@ local function _gen_req(args)
     for i = 1, nargs do
         local arg = args[i]
         if type(arg) ~= "string" then
-            arg = tostring(arg)
+            if type(arg) == "number" and arg == math.floor(arg) then 
+                arg = string.format("%.0f",arg)
+            else
+                arg = tostring(arg)
+            end
         end
 
         req[nbits] = "$"
