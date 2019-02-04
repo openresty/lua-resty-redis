@@ -57,9 +57,9 @@ __DATA__
     }
 --- request
 GET /t
---- response_body
-failed to foo: ERR unknown command 'foo'
-failed to bar: ERR unknown command 'bar'
+--- response_body eval
+qr/\Afailed to foo: ERR unknown command [`']foo[`'](?:, with args beginning with: `a`,\s*)?
+failed to bar: ERR unknown command [`']bar[`'](?:, with args beginning with:\s*)?
+\z/
 --- no_error_log
 [error]
-

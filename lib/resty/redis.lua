@@ -68,7 +68,8 @@ end
 function _M.set_timeout(self, timeout)
     local sock = rawget(self, "_sock")
     if not sock then
-        return nil, "not initialized"
+        error("not initialized", 2)
+        return
     end
 
     return sock:settimeout(timeout)
