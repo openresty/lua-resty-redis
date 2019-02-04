@@ -326,4 +326,3 @@ failed to run command 3: WRONGTYPE Operation against a key holding the wrong kin
 cmd 4: an animal
 --- no_error_log
 [error]
-

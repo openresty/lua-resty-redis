@@ -37,4 +37,3 @@ __DATA__
 ^\d+\.\d+$
 --- no_error_log
 [error]
-

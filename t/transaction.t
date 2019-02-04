@@ -139,4 +139,3 @@ exec ans: \["OK",\[false,"(?:ERR|WRONGTYPE) Operation against a key holding the 
 $
 --- no_error_log
 [error]
-
