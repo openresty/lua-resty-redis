@@ -22,7 +22,7 @@ if not ok or type(new_tab) ~= "function" then
 end
 
 
-local _M = new_tab(0, 54)
+local _M = new_tab(0, 55)
 
 _M._VERSION = '0.27'
 
@@ -72,7 +72,18 @@ function _M.set_timeout(self, timeout)
         return
     end
 
-    return sock:settimeout(timeout)
+    sock:settimeout(timeout)
+end
+
+
+function _M.set_timeouts(self, connect_timeout, send_timeout, read_timeout)
+    local sock = rawget(self, "_sock")
+    if not sock then
+        error("not initialized", 2)
+        return
+    end
+
+    sock:settimeouts(connect_timeout, send_timeout, read_timeout)
 end
 
 

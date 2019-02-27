@@ -858,3 +858,112 @@ failed to connect: connection refused
 --- timeout: 3
 --- no_error_log
 [alert]
+
+
+
+=== TEST 16: set_timeouts() connect timeout
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:set_timeouts(100, 1000, 1000) -- 0.1 sec
+
+            local ok, err = red:connect("127.0.0.2", 12345)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+failed to connect: timeout
+--- no_error_log
+[alert]
+
+
+
+=== TEST 17: set_timeouts() send timeout
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:set_timeouts(1000, 100, 1000) -- 0.1 sec
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            local res, err = red:flushall()
+            if not res then
+                ngx.say("failed to flushall: ", err)
+                return
+            end
+
+            ngx.say("flushall: ", res)
+
+            local res, err = red:blpop("key", 1)
+            if err then
+                ngx.say("failed to blpop: ", err)
+            end
+
+            red:close()
+        }
+    }
+--- request
+GET /t
+--- response_body
+flushall: OK
+failed to blpop: timeout
+--- no_error_log
+[alert]
+
+
+
+=== TEST 18: set_timeouts() read timeout
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:set_timeouts(1000, 1000, 100) -- 0.1 sec
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            local res, err = red:flushall()
+            if not res then
+                ngx.say("failed to flushall: ", err)
+                return
+            end
+
+            ngx.say("flushall: ", res)
+
+            local res, err = red:blpop("key", 1)
+            if err then
+                ngx.say("failed to blpop: ", err)
+            end
+
+            red:close()
+        }
+    }
+--- request
+GET /t
+--- response_body
+flushall: OK
+failed to blpop: timeout
+--- no_error_log
+[alert]

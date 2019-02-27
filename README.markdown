@@ -14,6 +14,7 @@ Table of Contents
     * [new](#new)
     * [connect](#connect)
     * [set_timeout](#set_timeout)
+    * [set_timeouts](#set_timeouts)
     * [set_keepalive](#set_keepalive)
     * [get_reused_times](#get_reused_times)
     * [close](#close)
@@ -72,7 +73,7 @@ Synopsis
                 local redis = require "resty.redis"
                 local red = redis:new()
 
-                red:set_timeout(1000) -- 1 sec
+                red:set_timeouts(1000, 1000, 1000) -- 1 sec
 
                 -- or connect to a unix domain socket file listened
                 -- by a redis server:
@@ -233,15 +234,32 @@ An optional Lua table can be specified as the last argument to this method to sp
 [Back to TOC](#table-of-contents)
 
 set_timeout
-----------
+-----------
 `syntax: red:set_timeout(time)`
 
 Sets the timeout (in ms) protection for subsequent operations, including the `connect` method.
 
+Since version `v0.28` of this module, it is advised that
+[set_timeouts](#set_timeouts) be used in favor of this method.
+
+[Back to TOC](#table-of-contents)
+
+set_timeouts
+------------
+`syntax: red:set_timeouts(connect_timeout, send_timeout, read_timeout)`
+
+Respectively sets the connect, send, and read timeout thresholds (in ms), for
+subsequent socket operations. Setting timeout thresholds with this method
+offers more granularity than [set_timeout](#set_timeout). As such, it is
+preferred to use [set_timeouts](#set_timeouts) over
+[set_timeout](#set_timeout).
+
+This method was added in the `v0.28` release.
+
 [Back to TOC](#table-of-contents)
 
 set_keepalive
-------------
+-------------
 `syntax: ok, err = red:set_keepalive(max_idle_timeout, pool_size)`
 
 Puts the current Redis connection immediately into the ngx_lua cosocket connection pool.
@@ -348,8 +366,8 @@ Reading a reply from the redis server. This method is mostly useful for the [Red
     local red = redis:new()
     local red2 = redis:new()
 
-    red:set_timeout(1000) -- 1 sec
-    red2:set_timeout(1000) -- 1 sec
+    red:set_timeouts(1000, 1000, 1000) -- 1 sec
+    red2:set_timeouts(1000, 1000, 1000) -- 1 sec
 
     local ok, err = red:connect("127.0.0.1", 6379)
     if not ok then
@@ -417,7 +435,7 @@ Adds new redis commands to the `resty.redis` class. Here is an example:
 
     local red = redis:new()
 
-    red:set_timeout(1000) -- 1 sec
+    red:set_timeouts(1000, 1000, 1000) -- 1 sec
 
     local ok, err = red:connect("127.0.0.1", 6379)
     if not ok then
@@ -450,7 +468,7 @@ commands like `GET` and `SET`. So one can just invoke the `auth` method on your 
     local redis = require "resty.redis"
     local red = redis:new()
 
-    red:set_timeout(1000) -- 1 sec
+    red:set_timeouts(1000, 1000, 1000) -- 1 sec
 
     local ok, err = red:connect("127.0.0.1", 6379)
     if not ok then
@@ -487,7 +505,7 @@ This library supports the [Redis transactions](http://redis.io/topics/transactio
     local redis = require "resty.redis"
     local red = redis:new()
 
-    red:set_timeout(1000) -- 1 sec
+    red:set_timeouts(1000, 1000, 1000) -- 1 sec
 
     local ok, err = red:connect("127.0.0.1", 6379)
     if not ok then
@@ -574,7 +592,7 @@ Check List for Issues
 
 1. Ensure you configure the connection pool size properly in the [set_keepalive](#set_keepalive) . Basically if your NGINX handle `n` concurrent requests and your NGINX has `m` workers, then the connection pool size should be configured as `n/m`. For example, if your NGINX usually handles 1000 concurrent requests and you have 10 NGINX workers, then the connection pool size should be 100.
 2. Ensure the backlog setting on the Redis side is large enough. For Redis 2.8+, you can directly tune the `tcp-backlog` parameter in the `redis.conf` file (and also tune the kernel parameter `SOMAXCONN` accordingly at least on Linux). You may also want to tune the `maxclients` parameter in `redis.conf`.
-3. Ensure you are not using too short timeout setting in the [set_timeout](#set_timeout) method. If you have to, try redoing the operation upon timeout and turning off [automatic error logging](#automatic-error-logging) (because you are already doing proper error handling in your own Lua code).
+3. Ensure you are not using too short timeout setting in the [set_timeout](#set_timeout) or [set_timeouts](#set_timeouts) methods. If you have to, try redoing the operation upon timeout and turning off [automatic error logging](#automatic-error-logging) (because you are already doing proper error handling in your own Lua code).
 4. If your NGINX worker processes' CPU usage is very high under load, then the NGINX event loop might be blocked by the CPU computation too much. Try sampling a [C-land on-CPU Flame Graph](https://github.com/agentzh/nginx-systemtap-toolkit#sample-bt) and [Lua-land on-CPU Flame Graph](https://github.com/agentzh/stapxx#ngx-lj-lua-stacks) for a typical NGINX worker process. You can optimize the CPU-bound things according to these Flame Graphs.
 5. If your NGINX worker processes' CPU usage is very low under load, then the NGINX event loop might be blocked by some blocking system calls (like file IO system calls). You can confirm the issue by running the [epoll-loop-blocking-distr](https://github.com/agentzh/stapxx#epoll-loop-blocking-distr) tool against a typical NGINX worker process. If it is indeed the case, then you can further sample a [C-land off-CPU Flame Graph](https://github.com/agentzh/nginx-systemtap-toolkit#sample-bt-off-cpu) for a NGINX worker process to analyze the actual blockers.
 6. If your `redis-server` process is running near 100% CPU usage, then you should consider scale your Redis backend by multiple nodes or use the [C-land on-CPU Flame Graph tool](https://github.com/agentzh/nginx-systemtap-toolkit#sample-bt) to analyze the internal bottlenecks within the Redis server process.
