@@ -75,6 +75,7 @@ function _M.set_timeout(self, timeout)
     return sock:settimeout(timeout)
 end
 
+
 function _M.set_timeouts(self, connect_timeout, send_timeout, read_timeout)
     local sock = rawget(self, "_sock")
     if not sock then
@@ -84,6 +85,7 @@ function _M.set_timeouts(self, connect_timeout, send_timeout, read_timeout)
 
     return sock:settimeouts(connect_timeout, send_timeout, read_timeout)
 end
+
 
 function _M.connect(self, ...)
     local sock = rawget(self, "_sock")
