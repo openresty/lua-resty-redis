@@ -14,6 +14,7 @@ Table of Contents
     * [new](#new)
     * [connect](#connect)
     * [set_timeout](#set_timeout)
+    * [set_timeouts](#set_timeouts)
     * [set_keepalive](#set_keepalive)
     * [get_reused_times](#get_reused_times)
     * [close](#close)
@@ -237,6 +238,14 @@ set_timeout
 `syntax: red:set_timeout(time)`
 
 Sets the timeout (in ms) protection for subsequent operations, including the `connect` method.
+
+[Back to TOC](#table-of-contents)
+
+set_timeouts
+----------
+`syntax: red:set_timeouts(connect_timeout, send_timeout, read_timeout)`
+
+Sets each timeouts (in ms) protection for subsequent operations more exactly.
 
 [Back to TOC](#table-of-contents)
 
