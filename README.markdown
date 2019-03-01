@@ -245,7 +245,7 @@ set_timeouts
 ----------
 `syntax: red:set_timeouts(connect_timeout, send_timeout, read_timeout)`
 
-Sets each timeouts (in ms) protection for subsequent operations more exactly.
+Sets each timeout (in ms) threshold with finer granularity than `set_timeout()` method.
 
 [Back to TOC](#table-of-contents)
 

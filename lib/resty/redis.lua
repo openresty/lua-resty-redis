@@ -22,7 +22,7 @@ if not ok or type(new_tab) ~= "function" then
 end
 
 
-local _M = new_tab(0, 54)
+local _M = new_tab(0, 55)
 
 _M._VERSION = '0.27'
 
