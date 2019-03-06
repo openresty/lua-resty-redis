@@ -73,7 +73,6 @@ function _M.set_timeout(self, timeout)
     end
 
     sock:settimeout(timeout)
-    return
 end
 
 
@@ -85,7 +84,6 @@ function _M.set_timeouts(self, connect_timeout, send_timeout, read_timeout)
     end
 
     sock:settimeouts(connect_timeout, send_timeout, read_timeout)
-    return
 end
 
 
