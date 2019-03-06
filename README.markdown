@@ -234,7 +234,7 @@ An optional Lua table can be specified as the last argument to this method to sp
 [Back to TOC](#table-of-contents)
 
 set_timeout
-----------
+-----------
 `syntax: red:set_timeout(time)`
 
 Sets the timeout (in ms) protection for subsequent operations, including the `connect` method.
@@ -242,7 +242,7 @@ Sets the timeout (in ms) protection for subsequent operations, including the `co
 [Back to TOC](#table-of-contents)
 
 set_timeouts
-----------
+------------
 `syntax: red:set_timeouts(connect_timeout, send_timeout, read_timeout)`
 
 Sets each timeout (in ms) threshold with finer granularity than `set_timeout()` method.
@@ -250,7 +250,7 @@ Sets each timeout (in ms) threshold with finer granularity than `set_timeout()` 
 [Back to TOC](#table-of-contents)
 
 set_keepalive
-------------
+-------------
 `syntax: ok, err = red:set_keepalive(max_idle_timeout, pool_size)`
 
 Puts the current Redis connection immediately into the ngx_lua cosocket connection pool.
