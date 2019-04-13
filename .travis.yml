@@ -43,6 +43,8 @@ install:
   - git clone https://github.com/openresty/nginx-devel-utils.git
   - git clone https://github.com/openresty/lua-cjson.git
   - git clone https://github.com/openresty/lua-nginx-module.git ../lua-nginx-module
+  - git clone https://github.com/openresty/lua-resty-core.git ../lua-resty-core
+  - git clone https://github.com/openresty/lua-resty-lrucache.git ../lua-resty-lrucache
   - git clone https://github.com/openresty/echo-nginx-module.git ../echo-nginx-module
   - git clone https://github.com/openresty/no-pool-nginx.git ../no-pool-nginx
   - git clone -b v2.1-agentzh https://github.com/openresty/luajit2.git
