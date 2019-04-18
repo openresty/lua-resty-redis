@@ -237,6 +237,16 @@ end
 local function _do_cmd(self, ...)
     local args = {...}
 
+    ---@authov Victor Burre <victor.burre@gmail.com>
+    -- It is a workaround for invocking dot-separated commands
+    -- of Redis modules like RedisJSON, rediSQL, etc. In order to
+    -- properly call such command, just substitute 'dot' with 'underscore'.
+    -- Example:
+    --   redis:json_set("key", ".", "{}"
+    --   redis:json_get("key")
+    -- Below we just swap they backward.
+    args[1] = args[1]:gsub("_", ".")
+
     local sock = rawget(self, "_sock")
     if not sock then
         return nil, "not initialized"
