@@ -967,3 +967,214 @@ flushall: OK
 failed to blpop: timeout
 --- no_error_log
 [alert]
+
+
+
+=== TEST 19: connect() bad host argument (boolean)
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:connect(true)
+        }
+    }
+--- request
+GET /t
+--- error_code: 500
+--- ignore_response_body
+--- error_log
+bad argument #1 host: string expected, got boolean
+--- no_error_log
+[crit]
+
+
+
+=== TEST 20: connect() bad host argument (nil)
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:connect(nil)
+        }
+    }
+--- request
+GET /t
+--- error_code: 500
+--- ignore_response_body
+--- error_log
+bad argument #1 host: string expected, got nil
+--- no_error_log
+[crit]
+
+
+
+=== TEST 21: connect() bad port argument (nil)
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:connect("127.0.0.1", nil)
+        }
+    }
+--- request
+GET /t
+--- error_code: 500
+--- ignore_response_body
+--- error_log
+bad argument #2 port: number expected, got nil
+--- no_error_log
+[crit]
+
+
+
+=== TEST 22: connect() bad port argument (boolean)
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:connect("127.0.0.1", true)
+        }
+    }
+--- request
+GET /t
+--- error_code: 500
+--- ignore_response_body
+--- error_log
+bad argument #2 port: number expected, got boolean
+--- no_error_log
+[crit]
+
+
+
+=== TEST 23: connect() bad port argument (string)
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:connect("127.0.0.1", "foo")
+        }
+    }
+--- request
+GET /t
+--- error_code: 500
+--- ignore_response_body
+--- error_log
+bad argument #2 port: number expected, got string
+--- no_error_log
+[crit]
+
+
+
+=== TEST 24: connect() accepts port argument as string
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:set_timeout(1000) -- 1 sec
+
+            local ok, err = red:connect("127.0.0.1", tostring($TEST_NGINX_REDIS_PORT))
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            ngx.say("ok")
+        }
+    }
+--- request
+GET /t
+--- response_body
+ok
+--- no_error_log
+[error]
+
+
+
+=== TEST 25: connect() bad opts argument
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT, true)
+        }
+    }
+--- request
+GET /t
+--- error_code: 500
+--- ignore_response_body
+--- error_log
+bad argument #3 opts: nil or table expected, got boolean
+--- no_error_log
+[crit]
+
+
+
+=== TEST 26: connect() bad opts argument for unix sockets
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:connect("unix:", true)
+        }
+    }
+--- request
+GET /t
+--- error_code: 500
+--- ignore_response_body
+--- error_log
+bad argument #2 opts: nil or table expected, got boolean
+--- no_error_log
+[crit]
+
+
+
+=== TEST 27: connect() unix socket arguments when 'host' starts with 'unix:'
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            local pok, perr = pcall(red.connect, red, "unix:", true)
+            if not pok then
+                ngx.say(perr)
+            end
+
+            local pok, perr = pcall(red.connect, red, "_unix:", true)
+            if not pok then
+                ngx.say(perr)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+bad argument #2 opts: nil or table expected, got boolean
+bad argument #2 port: number expected, got boolean
+--- no_error_log
+[error]

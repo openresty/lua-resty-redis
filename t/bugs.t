@@ -26,7 +26,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: github issue #108: ngx.locaiton.capture + redis.set_keepalive
+=== TEST 1: github issue #108: ngx.location.capture + redis.set_keepalive
 --- http_config eval: $::HttpConfig
 --- config
     location /r1 {

@@ -42,6 +42,7 @@ install:
   - git clone https://github.com/openresty/nginx-devel-utils.git
   - git clone https://github.com/openresty/lua-cjson.git
   - git clone https://github.com/openresty/lua-nginx-module.git ../lua-nginx-module
+  - git clone https://github.com/openresty/stream-lua-nginx-module.git ../stream-lua-nginx-module
   - git clone https://github.com/openresty/lua-resty-core.git ../lua-resty-core
   - git clone https://github.com/openresty/lua-resty-lrucache.git ../lua-resty-lrucache
   - git clone https://github.com/openresty/echo-nginx-module.git ../echo-nginx-module
@@ -62,7 +63,7 @@ script:
   - cd ..
   - export PATH=$PWD/work/nginx/sbin:$PWD/nginx-devel-utils:$PATH
   - export NGX_BUILD_CC=$CC
-  - ngx-build $NGINX_VERSION --with-ipv6 --with-http_realip_module --with-http_ssl_module --add-module=../echo-nginx-module --add-module=../lua-nginx-module --with-debug
+  - ngx-build $NGINX_VERSION --with-ipv6 --with-http_realip_module --with-http_ssl_module --add-module=../echo-nginx-module --add-module=../lua-nginx-module --add-module=../stream-lua-nginx-module --with-stream --with-stream_ssl_module --with-debug
   - nginx -V
   - ldd `which nginx`|grep -E 'luajit|ssl|pcre'
   - prove -r t

@@ -87,15 +87,76 @@ function _M.set_timeouts(self, connect_timeout, send_timeout, read_timeout)
 end
 
 
-function _M.connect(self, ...)
+function _M.connect(self, host, port_or_opts, opts)
     local sock = rawget(self, "_sock")
     if not sock then
         return nil, "not initialized"
     end
 
+    local unix
+
+    do
+        local typ = type(host)
+        if typ ~= "string" then
+            error("bad argument #1 host: string expected, got " .. typ, 2)
+        end
+
+        if sub(host, 1, 5) == "unix:" then
+            unix = true
+        end
+
+        if unix then
+            typ = type(port_or_opts)
+            if port_or_opts ~= nil and typ ~= "table" then
+                error("bad argument #2 opts: nil or table expected, got " ..
+                      typ, 2)
+            end
+
+        else
+            typ = type(port_or_opts)
+            if typ ~= "number" then
+                port_or_opts = tonumber(port_or_opts)
+                if port_or_opts == nil then
+                    error("bad argument #2 port: number expected, got " ..
+                          typ, 2)
+                end
+            end
+
+            if opts ~= nil then
+                typ = type(opts)
+                if typ ~= "table" then
+                    error("bad argument #3 opts: nil or table expected, got " ..
+                          typ, 2)
+                end
+            end
+        end
+
+    end
+
     self._subscribed = false
 
-    return sock:connect(...)
+    local ok, err
+
+    if unix then
+        ok, err = sock:connect(host, port_or_opts)
+        opts = port_or_opts
+
+    else
+        ok, err = sock:connect(host, port_or_opts, opts)
+    end
+
+    if not ok then
+        return ok, err
+    end
+
+    if opts and opts.ssl then
+        ok, err = sock:sslhandshake(false, opts.server_name, opts.ssl_verify)
+        if not ok then
+            return ok, "failed to do ssl handshake: " .. err
+        end
+    end
+
+    return ok, err
 end
 
 
