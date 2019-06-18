@@ -13,6 +13,7 @@ local tonumber = tonumber
 local tostring = tostring
 local rawget = rawget
 local select = select
+local find = string.find
 --local error = error
 
 
@@ -52,6 +53,9 @@ local unsub_commands = {
     "unsubscribe", "punsubscribe"
 }
 
+local function startswith(s, prefix)
+    return find(s,prefix,1,true) == 1
+end
 
 local mt = { __index = _M }
 
@@ -82,11 +86,47 @@ function _M.connect(self, ...)
         return nil, "not initialized"
     end
 
+    local params = {...}
+
+    if not params or #params < 2 then
+        return nil, "invalid arguments"
+    end
+
     self._subscribed = false
 
-    return sock:connect(...)
-end
+    local host = params[1]
+    local connect_opts, opts, err
+    if startswith(host, "unix:") then
+        opts = params[2] or {}
+        connect_opts = {
+            pool = opts.pool,
+            poolsize = opts.poolsize,
+            backlog = opts.backlog
+        }
+        ok, err = sock:connect(host, connect_opts)
+    else
+        local port = params[2] or 6379
+        opts = params[3] or {}
+        connect_opts = {
+            pool = opts.pool,
+            poolsize = opts.poolsize,
+            backlog = opts.backlog
+        }
+        ok, err = sock:connect(host, port, connect_opts)
+    end
 
+    local ssl_verify = opts.ssl_verify
+    local use_ssl = opts.ssl or ssl_verify
+
+    if use_ssl then
+        ok, err = sock:sslhandshake(false, opts.server_name, ssl_verify)
+        if not ok then
+            return nil, "failed to do ssl handshake: " .. (err or "")
+        end
+    end
+
+    return ok, err
+end
 
 function _M.set_keepalive(self, ...)
     local sock = rawget(self, "_sock")

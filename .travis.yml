@@ -11,6 +11,7 @@ compiler:
 
 services:
  - redis-server
+ - docker
 
 cache:
   directories:
@@ -32,6 +33,10 @@ env:
     - TEST_NGINX_SLEEP=0.006
   matrix:
     - NGINX_VERSION=1.15.8
+
+before_install:
+- docker pull vinayakhulawale/ssl-redis-server
+- docker run --rm -d -p 6179:6379 --name ssl-redis-server vinayakhulawale/ssl-redis-server
 
 install:
   - if [ ! -d download-cache ]; then mkdir download-cache; fi
