@@ -115,6 +115,10 @@ function _M.connect(self, ...)
         ok, err = sock:connect(host, port, connect_opts)
     end
 
+    if not ok then
+        return nil, err
+    end
+
     local ssl_verify = opts.ssl_verify
     local use_ssl = opts.ssl or ssl_verify
 
