@@ -100,7 +100,7 @@ function _M.connect(self, ...)
         opts = params[2] or {}
         connect_opts = {
             pool = opts.pool,
-            poolsize = opts.poolsize,
+            pool_size = opts.pool_size,
             backlog = opts.backlog
         }
         ok, err = sock:connect(host, connect_opts)
@@ -109,7 +109,7 @@ function _M.connect(self, ...)
         opts = params[3] or {}
         connect_opts = {
             pool = opts.pool,
-            poolsize = opts.poolsize,
+            pool_size = opts.pool_size,
             backlog = opts.backlog
         }
         ok, err = sock:connect(host, port, connect_opts)
