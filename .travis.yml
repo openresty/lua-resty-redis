@@ -31,7 +31,7 @@ env:
     - LD_LIBRARY_PATH=$LUAJIT_LIB:$LD_LIBRARY_PATH
     - TEST_NGINX_SLEEP=0.006
   matrix:
-    - NGINX_VERSION=1.15.8
+    - NGINX_VERSION=1.17.1
 
 install:
   - if [ ! -d download-cache ]; then mkdir download-cache; fi
