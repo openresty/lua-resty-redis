@@ -53,10 +53,6 @@ local unsub_commands = {
     "unsubscribe", "punsubscribe"
 }
 
-local function startswith(s, prefix)
-    return find(s,prefix,1,true) == 1
-end
-
 local mt = { __index = _M }
 
 
@@ -80,47 +76,28 @@ function _M.set_timeout(self, timeout)
 end
 
 
-function _M.connect(self, ...)
+function _M.connect(self, host, port_or_opts, opts)
     local sock = rawget(self, "_sock")
     if not sock then
         return nil, "not initialized"
     end
 
-    local params = {...}
-
-    if not params or #params < 2 then
-        return nil, "invalid arguments"
-    end
-
     self._subscribed = false
 
-    local host = params[1]
-    local connect_opts, opts, err
-    if startswith(host, "unix:") then
-        opts = params[2] or {}
-        connect_opts = {
-            pool = opts.pool,
-            pool_size = opts.pool_size,
-            backlog = opts.backlog
-        }
-        ok, err = sock:connect(host, connect_opts)
+    local err
+    if  find(host,"unix:",1,true) == 1 then
+        ok, err = sock:connect(host, port_or_opts)
+
     else
-        local port = params[2] or 6379
-        opts = params[3] or {}
-        connect_opts = {
-            pool = opts.pool,
-            pool_size = opts.pool_size,
-            backlog = opts.backlog
-        }
-        ok, err = sock:connect(host, port, connect_opts)
+        ok, err = sock:connect(host, port_or_opts, opts)
     end
 
     if not ok then
         return nil, err
     end
 
-    local ssl_verify = opts.ssl_verify
-    local use_ssl = opts.ssl or ssl_verify
+    local ssl_verify = opts and opts.ssl_verify
+    local use_ssl = opts and opts.ssl or ssl_verify
 
     if use_ssl then
         ok, err = sock:sslhandshake(false, opts.server_name, ssl_verify)
