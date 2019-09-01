@@ -5,16 +5,19 @@ os: linux
 
 language: c
 
-compiler:
-  - gcc
-  - clang
+compiler: gcc
+
+addons:
+  apt:
+    packages:
+      - luarocks
 
 services:
  - redis-server
 
 cache:
   directories:
-  - download-cache
+    - download-cache
 
 env:
   global:
@@ -30,8 +33,13 @@ env:
     - OPENSSL_VER=1.0.2h
     - LD_LIBRARY_PATH=$LUAJIT_LIB:$LD_LIBRARY_PATH
     - TEST_NGINX_SLEEP=0.006
+    - LUACHECK_VER=0.21.1
   matrix:
     - NGINX_VERSION=1.17.1
+
+before_install:
+  - sudo luarocks install luacheck $LUACHECK_VER
+  - luacheck -q .
 
 install:
   - if [ ! -d download-cache ]; then mkdir download-cache; fi
