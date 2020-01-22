@@ -35,7 +35,7 @@ env:
     - TEST_NGINX_SLEEP=0.006
     - LUACHECK_VER=0.21.1
   matrix:
-    - NGINX_VERSION=1.17.4
+    - NGINX_VERSION=1.17.8
 
 before_install:
   - sudo luarocks install luacheck $LUACHECK_VER
