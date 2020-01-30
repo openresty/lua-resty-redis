@@ -241,7 +241,7 @@ The optional `options_table` argument is a Lua table holding the following keys:
 
 * `pool`
 
-    Specifies a custom name for the connection pool being used. If omitted, then the connection pool name will be generated from the string template `<host>:<port>` or `<unix-socket-path>`.
+    Specifies a custom name for the connection pool being used. If omitted, then the connection pool name will be generated from the string template `[<server_name>:]<host>:<port>` or `[<server_name>:]<unix-socket-path>`.
 
 * `pool_size`
 
