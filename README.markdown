@@ -187,6 +187,11 @@ Here are some more examples:
     local res, err = red:hmset("myhash", "field1", "Hello", "field2", "World")
 ```
 
+```lua
+    -- RedisBloom commands contain a dot (use '__' instead)
+    local res, err = red:cf__exists("key", "item")
+```
+
 All these command methods returns a single result in success and `nil` otherwise. In case of errors or failures, it will also return a second value which is a string describing the error.
 
 A Redis "status reply" results in a string typed return value with the "+" prefix stripped.

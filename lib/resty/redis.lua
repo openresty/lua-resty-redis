@@ -663,7 +663,7 @@ end
 setmetatable(_M, {__index = function(self, cmd)
     local method =
         function (self, ...)
-            return _do_cmd(self, cmd, ...)
+            return _do_cmd(self, cmd:gsub("__", "."), ...)
         end
 
     -- cache the lazily generated method in our
