@@ -1,6 +1,6 @@
 # vim:set ft= ts=4 sw=4 et:
 
-use Test::Nginx::Socket::Lua;
+use Test::Nginx::Socket::Lua::Stream;
 use Cwd qw(cwd);
 
 repeat_each(2);
@@ -9,7 +9,41 @@ plan tests => repeat_each() * (3 * blocks());
 
 my $pwd = cwd();
 
-our $HttpConfig = qq{
+add_block_preprocessor(sub {
+    my $block = shift;
+
+    if (!defined $block->http_only) {
+        if ($ENV{TEST_SUBSYSTEM} eq "stream") {
+            if (!defined $block->stream_config) {
+                $block->set_value("stream_config", $block->global_config);
+            }
+            if (!defined $block->stream_server_config) {
+                $block->set_value("stream_server_config", $block->server_config);
+            }
+            if (defined $block->internal_server_error) {
+                $block->set_value("stream_respons", "");
+            }
+        } else {
+            if (!defined $block->http_config) {
+                $block->set_value("http_config", $block->global_config);
+            }
+            if (!defined $block->request) {
+                $block->set_value("request", <<\_END_);
+GET /t
+_END_
+            }
+            if (!defined $block->config) {
+                $block->set_value("config", "location /t {\n" . $block->server_config . "\n}");
+            }
+            if (defined $block->internal_server_error) {
+                $block->set_value("error_code", 500);
+                $block->set_value("ignore_response_body", "");
+            }
+        }
+    }
+});
+
+our $GlobalConfig = qq{
     lua_package_path "$pwd/lib/?.lua;;;";
     lua_package_cpath "/usr/local/openresty-debug/lualib/?.so;/usr/local/openresty/lualib/?.so;;";
 };
@@ -25,9 +59,8 @@ run_tests();
 __DATA__
 
 === TEST 1: basic
---- http_config eval: $::HttpConfig
---- config
-    location /t {
+--- global_config eval: $::GlobalConfig
+--- server_config
         content_by_lua '
             local redis = require "resty.redis"
             local red = redis:new()
@@ -55,9 +88,6 @@ __DATA__
 
             red:close()
         ';
-    }
---- request
-GET /t
 --- response_body
 ["OK","an animal","OK","hello"]
 ["OK","an animal","OK","hello"]
@@ -67,9 +97,8 @@ GET /t
 
 
 === TEST 2: cancel automatically
---- http_config eval: $::HttpConfig
---- config
-    location /t {
+--- global_config eval: $::GlobalConfig
+--- server_config
         content_by_lua '
             local redis = require "resty.redis"
             local red = redis:new()
@@ -102,9 +131,6 @@ GET /t
 
             red:close()
         ';
-    }
---- request
-GET /t
 --- response_body
 ["OK","an animal","OK","hello"]
 ["OK","an animal","OK","hello"]
@@ -114,9 +140,8 @@ GET /t
 
 
 === TEST 3: cancel explicitly
---- http_config eval: $::HttpConfig
---- config
-    location /t {
+--- global_config eval: $::GlobalConfig
+--- server_config
         content_by_lua '
             local redis = require "resty.redis"
             local red = redis:new()
@@ -159,9 +184,6 @@ GET /t
 
             red:close()
         ';
-    }
---- request
-GET /t
 --- response_body
 flushall: OK
 ["OK","an animal","OK","hello"]
@@ -172,9 +194,8 @@ flushall: OK
 
 
 === TEST 4: mixed
---- http_config eval: $::HttpConfig
---- config
-    location /test {
+--- global_config eval: $::GlobalConfig
+--- server_config
         content_by_lua '
             local redis = require "resty.redis"
             local red = redis:new()
@@ -247,9 +268,6 @@ flushall: OK
             --     return
             -- end
         ';
-    }
---- request
-    GET /test
 --- response_body
 set result: OK
 dog: an aniaml
@@ -263,9 +281,8 @@ cmd 4: Bob
 
 
 === TEST 5: redis return error in pipeline
---- http_config eval: $::HttpConfig
---- config
-    location /test {
+--- global_config eval: $::GlobalConfig
+--- server_config
         content_by_lua '
             local redis = require "resty.redis"
             local red = redis:new()
@@ -316,9 +333,6 @@ cmd 4: Bob
                 return
             end
         ';
-    }
---- request
-    GET /test
 --- response_body
 cmd 1: 
 cmd 2: OK

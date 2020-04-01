@@ -1,15 +1,53 @@
 # vim:set ft= ts=4 sw=4 et:
 
-use Test::Nginx::Socket::Lua;
+use Test::Nginx::Socket::Lua::Stream;
 use Cwd qw(cwd);
 
 repeat_each(2);
 
-plan tests => repeat_each() * (3 * blocks());
+if ($ENV{TEST_SUBSYSTEM} eq "stream") {
+    plan tests => repeat_each() * (3 * blocks()) - 2;
+} else {
+    plan tests => repeat_each() * (3 * blocks());
+}
 
 my $pwd = cwd();
 
-our $HttpConfig = qq{
+add_block_preprocessor(sub {
+    my $block = shift;
+
+    if (!defined $block->http_only) {
+        if ($ENV{TEST_SUBSYSTEM} eq "stream") {
+            if (!defined $block->stream_config) {
+                $block->set_value("stream_config", $block->global_config);
+            }
+            if (!defined $block->stream_server_config) {
+                $block->set_value("stream_server_config", $block->server_config);
+            }
+            if (defined $block->internal_server_error) {
+                $block->set_value("stream_respons", "");
+            }
+        } else {
+            if (!defined $block->http_config) {
+                $block->set_value("http_config", $block->global_config);
+            }
+            if (!defined $block->request) {
+                $block->set_value("request", <<\_END_);
+GET /t
+_END_
+            }
+            if (!defined $block->config) {
+                $block->set_value("config", "location /t {\n" . $block->server_config . "\n}");
+            }
+            if (defined $block->internal_server_error) {
+                $block->set_value("error_code", 500);
+                $block->set_value("response_body_like", "500 Internal Server Error");
+            }
+        }
+    }
+});
+
+our $GlobalConfig = qq{
     lua_package_path "$pwd/lib/?.lua;;;";
     lua_package_cpath "/usr/local/openresty-debug/lualib/?.so;/usr/local/openresty/lualib/?.so;;";
 };
@@ -25,9 +63,8 @@ run_tests();
 __DATA__
 
 === TEST 1: hmset key-pairs
---- http_config eval: $::HttpConfig
---- config
-    location /t {
+--- global_config eval: $::GlobalConfig
+--- server_config
         content_by_lua '
             local redis = require "resty.redis"
             local red = redis:new()
@@ -57,9 +94,6 @@ __DATA__
 
             red:close()
         ';
-    }
---- request
-GET /t
 --- response_body
 hmset animals: OK
 hmget animals: barkmeow
@@ -69,9 +103,8 @@ hmget animals: barkmeow
 
 
 === TEST 2: hmset lua tables
---- http_config eval: $::HttpConfig
---- config
-    location /t {
+--- global_config eval: $::GlobalConfig
+--- server_config
         content_by_lua '
             local redis = require "resty.redis"
             local red = redis:new()
@@ -102,9 +135,6 @@ hmget animals: barkmeow
 
             red:close()
         ';
-    }
---- request
-GET /t
 --- response_body
 hmset animals: OK
 hmget animals: barkmeowmoo
@@ -114,9 +144,8 @@ hmget animals: barkmeowmoo
 
 
 === TEST 3: hmset a single scalar
---- http_config eval: $::HttpConfig
---- config
-    location /t {
+--- global_config eval: $::GlobalConfig
+--- server_config
         content_by_lua '
             local redis = require "resty.redis"
             local red = redis:new()
@@ -146,10 +175,6 @@ hmget animals: barkmeowmoo
 
             red:close()
         ';
-    }
---- request
-GET /t
---- response_body_like: 500 Internal Server Error
---- error_code: 500
+--- internal_server_error
 --- error_log
 table expected, got string

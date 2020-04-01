@@ -1,6 +1,6 @@
 # vim:set ft= ts=4 sw=4 et:
 
-use Test::Nginx::Socket::Lua;
+use Test::Nginx::Socket::Lua::Stream;
 use Cwd qw(cwd);
 
 repeat_each(2);
@@ -10,7 +10,41 @@ plan tests => repeat_each() * (3 * blocks());
 my $pwd = cwd();
 my $HtmlDir = html_dir;
 
-our $HttpConfig = qq{
+add_block_preprocessor(sub {
+    my $block = shift;
+
+    if (!defined $block->http_only) {
+        if ($ENV{TEST_SUBSYSTEM} eq "stream") {
+            if (!defined $block->stream_config) {
+                $block->set_value("stream_config", $block->global_config);
+            }
+            if (!defined $block->stream_server_config) {
+                $block->set_value("stream_server_config", $block->server_config);
+            }
+            if (defined $block->internal_server_error) {
+                $block->set_value("stream_respons", "");
+            }
+        } else {
+            if (!defined $block->http_config) {
+                $block->set_value("http_config", $block->global_config);
+            }
+            if (!defined $block->request) {
+                $block->set_value("request", <<\_END_);
+GET /t
+_END_
+            }
+            if (!defined $block->config) {
+                $block->set_value("config", "location /t {\n" . $block->server_config . "\n}");
+            }
+            if (defined $block->internal_server_error) {
+                $block->set_value("error_code", 500);
+                $block->set_value("ignore_response_body", "");
+            }
+        }
+    }
+});
+
+our $GlobalConfig = qq{
     lua_package_path "$HtmlDir/?.lua;$pwd/lib/?.lua;;";
 };
 
@@ -27,7 +61,8 @@ run_tests();
 __DATA__
 
 === TEST 1: github issue #108: ngx.location.capture + redis.set_keepalive
---- http_config eval: $::HttpConfig
+--- http_only
+--- http_config eval: $::GlobalConfig
 --- config
     location /r1 {
         default_type text/html;
@@ -95,7 +130,8 @@ ok
 
 === TEST 2: exit(404) after I/O (ngx_lua github issue #110
 https://github.com/chaoslawful/lua-nginx-module/issues/110
---- http_config eval: $::HttpConfig
+--- http_only
+--- http_config eval: $::GlobalConfig
 --- config
     error_page 400 /400.html;
     error_page 404 /404.html;
@@ -166,9 +202,8 @@ Not found, dear...
 
 
 === TEST 3: set and get an empty string
---- http_config eval: $::HttpConfig
---- config
-    location /t {
+--- global_config eval: $::GlobalConfig
+--- server_config
         content_by_lua '
             local redis = require "resty.redis"
             local red = redis:new()
@@ -210,9 +245,6 @@ Not found, dear...
 
             red:close()
         ';
-    }
---- request
-GET /t
 --- response_body
 set dog: OK
 dog: 
@@ -223,7 +255,8 @@ dog:
 
 
 === TEST 4: ngx.exec() after red:get()
---- http_config eval: $::HttpConfig
+--- http_only
+--- http_config eval: $::GlobalConfig
 --- config
     location /t {
         content_by_lua '
