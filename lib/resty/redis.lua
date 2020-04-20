@@ -3,6 +3,8 @@
 
 local sub = string.sub
 local byte = string.byte
+local tab_insert = table.insert
+local tab_remove = table.remove
 local tcp = ngx.socket.tcp
 local null = ngx.null
 local type = type
@@ -306,6 +308,12 @@ local function _gen_req(args)
 end
 
 
+local function _check_msg(self, res)
+    return rawget(self, "_subscribed") and
+        type(res) == "table" and res[1] == "message"
+end
+
+
 local function _do_cmd(self, ...)
     local args = {...}
 
@@ -329,7 +337,17 @@ local function _do_cmd(self, ...)
         return nil, err
     end
 
-    return _read_reply(self, sock)
+    local res, err = _read_reply(self, sock)
+    while _check_msg(self, res) do
+        if rawget(self, "_buffered_msg") == nil then
+            self._buffered_msg = new_tab(1, 0)
+        end
+
+        tab_insert(self._buffered_msg, res)
+        res, err = _read_reply(self, sock)
+    end
+
+    return res, err
 end
 
 
@@ -339,6 +357,8 @@ local function _check_subscribed(self, res)
        and res[3] == 0
    then
         self._subscribed = false
+        -- FIXME: support multiple subscriptions in the next PR
+        self._buffered_msg = nil
     end
 end
 
@@ -351,6 +371,18 @@ function _M.read_reply(self)
 
     if not rawget(self, "_subscribed") then
         return nil, "not subscribed"
+    end
+
+    local buffered_msg = rawget(self, "_buffered_msg")
+    if buffered_msg then
+        local msg = buffered_msg[1]
+        tab_remove(buffered_msg, 1)
+
+        if #buffered_msg == 0 then
+            self._buffered_msg = nil
+        end
+
+        return msg
     end
 
     local res, err = _read_reply(self, sock)

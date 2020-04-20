@@ -556,3 +556,100 @@ GET /t
 
 --- no_error_log
 [error]
+
+
+
+=== TEST 8: mix read_reply and other commands
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        lua_socket_log_errors off;
+        content_by_lua '
+            local cjson = require "cjson"
+            local redis = require "resty.redis"
+
+            local red = redis:new()
+            local red2 = redis:new()
+
+            red:set_timeout(1000) -- 1 sec
+            red2:set_timeout(1000) -- 1 sec
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("1: failed to connect: ", err)
+                return
+            end
+
+            ok, err = red2:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("2: failed to connect: ", err)
+                return
+            end
+
+            res, err = red:subscribe("dog")
+            if not res then
+                ngx.say("1: failed to subscribe: ", err)
+                return
+            end
+
+            res, err = red2:publish("dog", "Hello")
+            if not res then
+                ngx.say("2: failed to publish: ", err)
+                return
+            end
+
+            res, err = red:ping()
+            if not res then
+                ngx.say("1: failed to subscribe: ", err)
+                return
+            end
+
+            res, err = red2:publish("dog", "World")
+            if not res then
+                ngx.say("2: failed to publish: ", err)
+                return
+            end
+
+            res, err = red:read_reply()
+            if not res then
+                ngx.say("1: failed to read reply: ", err)
+            else
+                ngx.say("1: receive: ", cjson.encode(res))
+            end
+
+            res, err = red:read_reply()
+            if not res then
+                ngx.say("1: failed to read reply: ", err)
+            else
+                ngx.say("1: receive: ", cjson.encode(res))
+            end
+
+            res, err = red:unsubscribe()
+            if not res then
+                ngx.say("1: failed to unscribe: ", err)
+            else
+                ngx.say("1: unsubscribe: ", cjson.encode(res))
+            end
+
+            red:set_timeout(1) -- 1s
+            res, err = red:read_reply()
+            if not res then
+                ngx.say("1: failed to read reply: ", err)
+            else
+                ngx.say("1: receive: ", cjson.encode(res))
+            end
+
+            red:close()
+            red2:close()
+        ';
+    }
+--- request
+GET /t
+--- response_body_like chop
+1: receive: \["message","dog","Hello"\]
+1: receive: \["message","dog","World"\]
+1: unsubscribe: \["unsubscribe","dog",0\]
+1: failed to read reply: not subscribed$
+
+--- no_error_log
+[error]
