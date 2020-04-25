@@ -7,6 +7,7 @@ local tab_insert = table.insert
 local tab_remove = table.remove
 local tcp = ngx.socket.tcp
 local null = ngx.null
+local ipairs = ipairs
 local type = type
 local pairs = pairs
 local unpack = unpack
@@ -63,7 +64,13 @@ function _M.new(self)
     if not sock then
         return nil, err
     end
-    return setmetatable({ _sock = sock, _subscribed = false }, mt)
+    return setmetatable({ _sock = sock,
+                          _subscribed = false,
+                          _n_channel = {
+                            unsubscribe = 0,
+                            punsubscribe = 0,
+                          },
+                        }, mt)
 end
 
 
@@ -310,7 +317,7 @@ end
 
 local function _check_msg(self, res)
     return rawget(self, "_subscribed") and
-        type(res) == "table" and res[1] == "message"
+        type(res) == "table" and (res[1] == "message" or res[1] == "pmessage")
 end
 
 
@@ -351,14 +358,54 @@ local function _do_cmd(self, ...)
 end
 
 
-local function _check_subscribed(self, res)
+local function _check_unsubscribed(self, res)
     if type(res) == "table"
        and (res[1] == "unsubscribe" or res[1] == "punsubscribe")
-       and res[3] == 0
+    then
+        self._n_channel[res[1]] = self._n_channel[res[1]] - 1
+
+        local buffered_msg = rawget(self, "_buffered_msg")
+        if buffered_msg then
+            -- remove messages of unsubscribed channel
+            local msg_type =
+                (res[1] == "punsubscribe") and "pmessage" or "message"
+            local j = 1
+            for _, msg in ipairs(buffered_msg) do
+                if msg[1] == msg_type and msg[2] ~= res[2] then
+                    -- move messages to overwrite the removed ones
+                    buffered_msg[j] = msg
+                    j = j + 1
+                end
+            end
+
+            -- clear remain messages
+            for i = j, #buffered_msg do
+                buffered_msg[i] = nil
+            end
+
+            if #buffered_msg == 0 then
+                self._buffered_msg = nil
+            end
+        end
+
+        if res[3] == 0 then
+            -- all channels are unsubscribed
+            self._subscribed = false
+        end
+    end
+end
+
+
+local function _check_subscribed(self, res)
+    if type(res) == "table"
+       and (res[1] == "subscribe" or res[1] == "psubscribe")
    then
-        self._subscribed = false
-        -- FIXME: support multiple subscriptions in the next PR
-        self._buffered_msg = nil
+        if res[1] == "subscribe" then
+            self._n_channel.unsubscribe = self._n_channel.unsubscribe + 1
+
+        elseif res[1] == "psubscribe" then
+            self._n_channel.punsubscribe = self._n_channel.punsubscribe + 1
+        end
     end
 end
 
@@ -386,7 +433,7 @@ function _M.read_reply(self)
     end
 
     local res, err = _read_reply(self, sock)
-    _check_subscribed(self, res)
+    _check_unsubscribed(self, res)
 
     return res, err
 end
@@ -407,8 +454,29 @@ for i = 1, #sub_commands do
 
     _M[cmd] =
         function (self, ...)
-            self._subscribed = true
-            return _do_cmd(self, cmd, ...)
+            if not rawget(self, "_subscribed") then
+                self._subscribed = true
+            end
+
+            local nargs = select("#", ...)
+            local ress = new_tab(nargs, 0)
+
+            local res, err
+            for i = 1, nargs do
+                res, err =  _do_cmd(self, cmd, ...)
+                if not res then
+                    return nil, err
+                end
+
+                _check_subscribed(self, res)
+                ress[i] = res
+            end
+
+            if nargs <= 1 then
+                return res
+            end
+
+            return ress
         end
 end
 
@@ -418,9 +486,37 @@ for i = 1, #unsub_commands do
 
     _M[cmd] =
         function (self, ...)
-            local res, err = _do_cmd(self, cmd, ...)
-            _check_subscribed(self, res)
-            return res, err
+            -- assume all channels are unsubscribed by only one time
+            if not rawget(self, "_subscribed") then
+                return nil, "not subscribed"
+            end
+
+            local nargs = select("#", ...)
+            local ress = new_tab(nargs, 0)
+
+            local res, err
+            local i = 1
+            while nargs == 0 or i <= nargs do
+                res, err =  _do_cmd(self, cmd, ...)
+                if not res then
+                    return nil, err
+                end
+
+                _check_unsubscribed(self, res)
+                ress[i] = res
+                i = i + 1
+
+                if self._n_channel[cmd] == 0 then
+                    -- exit the loop for unsubscribe() call
+                    break
+                end
+            end
+
+            if i <= 2 then
+                return res
+            end
+
+            return ress
         end
 end
 
