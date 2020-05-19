@@ -1,33 +1,18 @@
 # vim:set ft= ts=4 sw=4 et:
 
-use Test::Nginx::Socket::Lua;
-use Cwd qw(cwd);
+use t::Test;
 
 repeat_each(2);
 
-plan tests => repeat_each() * (3 * blocks());
-
-my $pwd = cwd();
-
-our $HttpConfig = qq{
-    lua_package_path "$pwd/lib/?.lua;;;";
-    lua_package_cpath "/usr/local/openresty-debug/lualib/?.so;/usr/local/openresty/lualib/?.so;;";
-};
-
-$ENV{TEST_NGINX_RESOLVER} = '8.8.8.8';
-$ENV{TEST_NGINX_REDIS_PORT} ||= 6379;
-
-no_long_string();
-#no_diff();
+plan tests => repeat_each() * (3 * blocks()) - 2;
 
 run_tests();
 
 __DATA__
 
 === TEST 1: hmset key-pairs
---- http_config eval: $::HttpConfig
---- config
-    location /t {
+--- global_config eval: $::GlobalConfig
+--- server_config
         content_by_lua '
             local redis = require "resty.redis"
             local red = redis:new()
@@ -57,9 +42,6 @@ __DATA__
 
             red:close()
         ';
-    }
---- request
-GET /t
 --- response_body
 hmset animals: OK
 hmget animals: barkmeow
@@ -69,9 +51,8 @@ hmget animals: barkmeow
 
 
 === TEST 2: hmset lua tables
---- http_config eval: $::HttpConfig
---- config
-    location /t {
+--- global_config eval: $::GlobalConfig
+--- server_config
         content_by_lua '
             local redis = require "resty.redis"
             local red = redis:new()
@@ -102,9 +83,6 @@ hmget animals: barkmeow
 
             red:close()
         ';
-    }
---- request
-GET /t
 --- response_body
 hmset animals: OK
 hmget animals: barkmeowmoo
@@ -114,9 +92,8 @@ hmget animals: barkmeowmoo
 
 
 === TEST 3: hmset a single scalar
---- http_config eval: $::HttpConfig
---- config
-    location /t {
+--- global_config eval: $::GlobalConfig
+--- server_config
         content_by_lua '
             local redis = require "resty.redis"
             local red = redis:new()
@@ -146,10 +123,6 @@ hmget animals: barkmeowmoo
 
             red:close()
         ';
-    }
---- request
-GET /t
---- response_body_like: 500 Internal Server Error
---- error_code: 500
+--- internal_server_error
 --- error_log
 table expected, got string

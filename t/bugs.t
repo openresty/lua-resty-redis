@@ -1,24 +1,10 @@
 # vim:set ft= ts=4 sw=4 et:
 
-use Test::Nginx::Socket::Lua;
-use Cwd qw(cwd);
+use t::Test;
 
 repeat_each(2);
 
 plan tests => repeat_each() * (3 * blocks());
-
-my $pwd = cwd();
-my $HtmlDir = html_dir;
-
-our $HttpConfig = qq{
-    lua_package_path "$HtmlDir/?.lua;$pwd/lib/?.lua;;";
-};
-
-$ENV{TEST_NGINX_RESOLVER} = '8.8.8.8';
-$ENV{TEST_NGINX_REDIS_PORT} ||= 6379;
-
-no_long_string();
-#no_diff();
 
 log_level 'warn';
 
@@ -27,7 +13,8 @@ run_tests();
 __DATA__
 
 === TEST 1: github issue #108: ngx.location.capture + redis.set_keepalive
---- http_config eval: $::HttpConfig
+--- http_only
+--- http_config eval: $::GlobalConfig
 --- config
     location /r1 {
         default_type text/html;
@@ -95,7 +82,8 @@ ok
 
 === TEST 2: exit(404) after I/O (ngx_lua github issue #110
 https://github.com/chaoslawful/lua-nginx-module/issues/110
---- http_config eval: $::HttpConfig
+--- http_only
+--- http_config eval: $::GlobalConfig
 --- config
     error_page 400 /400.html;
     error_page 404 /404.html;
@@ -166,9 +154,8 @@ Not found, dear...
 
 
 === TEST 3: set and get an empty string
---- http_config eval: $::HttpConfig
---- config
-    location /t {
+--- global_config eval: $::GlobalConfig
+--- server_config
         content_by_lua '
             local redis = require "resty.redis"
             local red = redis:new()
@@ -210,9 +197,6 @@ Not found, dear...
 
             red:close()
         ';
-    }
---- request
-GET /t
 --- response_body
 set dog: OK
 dog: 
@@ -223,7 +207,8 @@ dog:
 
 
 === TEST 4: ngx.exec() after red:get()
---- http_config eval: $::HttpConfig
+--- http_only
+--- http_config eval: $::GlobalConfig
 --- config
     location /t {
         content_by_lua '

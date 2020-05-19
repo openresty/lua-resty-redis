@@ -13,7 +13,7 @@ addons:
       - luarocks
 
 services:
- - redis-server
+ - redis
 
 cache:
   directories:
@@ -30,11 +30,11 @@ env:
     - OPENSSL_PREFIX=/opt/ssl
     - OPENSSL_LIB=$OPENSSL_PREFIX/lib
     - OPENSSL_INC=$OPENSSL_PREFIX/include
-    - OPENSSL_VER=1.0.2h
+    - OPENSSL_VER=1.1.1f
     - LD_LIBRARY_PATH=$LUAJIT_LIB:$LD_LIBRARY_PATH
     - TEST_NGINX_SLEEP=0.006
     - LUACHECK_VER=0.21.1
-  matrix:
+  jobs:
     - NGINX_VERSION=1.17.8
 
 before_install:
@@ -74,4 +74,5 @@ script:
   - ngx-build $NGINX_VERSION --with-ipv6 --with-http_realip_module --with-http_ssl_module --add-module=../echo-nginx-module --add-module=../lua-nginx-module --add-module=../stream-lua-nginx-module --with-stream --with-stream_ssl_module --with-debug
   - nginx -V
   - ldd `which nginx`|grep -E 'luajit|ssl|pcre'
-  - prove -r t
+  - TEST_SUBSYSTEM=http prove -r t
+  - TEST_SUBSYSTEM=stream prove -r t

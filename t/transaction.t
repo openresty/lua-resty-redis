@@ -1,33 +1,18 @@
 # vim:set ft= ts=4 sw=4 et:
 
-use Test::Nginx::Socket::Lua;
-use Cwd qw(cwd);
+use t::Test;
 
 repeat_each(2);
 
 plan tests => repeat_each() * (3 * blocks());
-
-my $pwd = cwd();
-
-our $HttpConfig = qq{
-    lua_package_path "$pwd/lib/?.lua;;";
-    lua_package_cpath "/usr/local/openresty-debug/lualib/?.so;/usr/local/openresty/lualib/?.so;;";
-};
-
-$ENV{TEST_NGINX_RESOLVER} = '8.8.8.8';
-$ENV{TEST_NGINX_REDIS_PORT} ||= 6379;
-
-no_long_string();
-#no_diff();
 
 run_tests();
 
 __DATA__
 
 === TEST 1: sanity
---- http_config eval: $::HttpConfig
---- config
-    location /t {
+--- global_config eval: $::GlobalConfig
+--- server_config
         content_by_lua '
             local cjson = require "cjson"
             local redis = require "resty.redis"
@@ -69,9 +54,6 @@ __DATA__
                 return
             end
         ';
-    }
---- request
-GET /t
 --- response_body
 multi ans: "OK"
 sort ans: "QUEUED"
@@ -82,9 +64,8 @@ exec ans: [{}]
 
 
 === TEST 2: redis cmd reference sample: redis does not halt on errors
---- http_config eval: $::HttpConfig
---- config
-    location /t {
+--- global_config eval: $::GlobalConfig
+--- server_config
         content_by_lua '
             local cjson = require "cjson"
             local redis = require "resty.redis"
@@ -128,9 +109,6 @@ exec ans: [{}]
 
             red:close()
         ';
-    }
---- request
-GET /t
 --- response_body_like chop
 ^multi ans: "OK"
 set ans: "QUEUED"

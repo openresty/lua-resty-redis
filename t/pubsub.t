@@ -1,33 +1,18 @@
 # vim:set ft= ts=4 sw=4 et:
 
-use Test::Nginx::Socket::Lua;
-use Cwd qw(cwd);
+use t::Test;
 
 repeat_each(2);
 
 plan tests => repeat_each() * (3 * blocks());
-
-my $pwd = cwd();
-
-our $HttpConfig = qq{
-    lua_package_path "$pwd/lib/?.lua;;";
-    lua_package_cpath "/usr/local/openresty-debug/lualib/?.so;/usr/local/openresty/lualib/?.so;;";
-};
-
-$ENV{TEST_NGINX_RESOLVER} = '8.8.8.8';
-$ENV{TEST_NGINX_REDIS_PORT} ||= 6379;
-
-no_long_string();
-#no_diff();
 
 run_tests();
 
 __DATA__
 
 === TEST 1: single channel
---- http_config eval: $::HttpConfig
---- config
-    location /t {
+--- global_config eval: $::GlobalConfig
+--- server_config
         content_by_lua '
             local cjson = require "cjson"
             local redis = require "resty.redis"
@@ -77,9 +62,6 @@ __DATA__
             red:close()
             red2:close()
         ';
-    }
---- request
-GET /t
 --- response_body
 1: subscribe: ["subscribe","dog",1]
 2: publish: 1
@@ -90,10 +72,9 @@ GET /t
 
 
 === TEST 2: single channel (retry read_reply() after timeout)
---- http_config eval: $::HttpConfig
---- config
+--- global_config eval: $::GlobalConfig
+--- server_config
     lua_socket_log_errors off;
-    location /t {
         content_by_lua '
             local cjson = require "cjson"
             local redis = require "resty.redis"
@@ -170,9 +151,6 @@ GET /t
             red:close()
             red2:close()
         ';
-    }
---- request
-GET /t
 --- response_body
 1: subscribe: ["subscribe","dog",1]
 1: failed to read reply: timeout
@@ -187,9 +165,8 @@ GET /t
 
 
 === TEST 3: multiple channels
---- http_config eval: $::HttpConfig
---- config
-    location /t {
+--- global_config eval: $::GlobalConfig
+--- server_config
         lua_socket_log_errors off;
         content_by_lua '
             local cjson = require "cjson"
@@ -279,9 +256,6 @@ GET /t
             red:close()
             red2:close()
         ';
-    }
---- request
-GET /t
 --- response_body_like chop
 ^1: subscribe dog: \["subscribe","dog",1\]
 1: subscribe cat: \["subscribe","cat",2\]
@@ -298,10 +272,9 @@ GET /t
 
 
 === TEST 4: call subscribe after read_reply() times out
---- http_config eval: $::HttpConfig
---- config
+--- global_config eval: $::GlobalConfig
+--- server_config
     lua_socket_log_errors off;
-    location /t {
         content_by_lua '
             local cjson = require "cjson"
             local redis = require "resty.redis"
@@ -354,9 +327,6 @@ GET /t
             red:close()
             red2:close()
         ';
-    }
---- request
-GET /t
 --- response_body
 1: subscribe: ["subscribe","dog",1]
 1: failed to read reply: timeout
@@ -368,10 +338,9 @@ GET /t
 
 
 === TEST 5: call set_keepalive in subscribed mode (previous read_reply calls timed out)
---- http_config eval: $::HttpConfig
---- config
+--- global_config eval: $::GlobalConfig
+--- server_config
     lua_socket_log_errors off;
-    location /t {
         content_by_lua '
             local cjson = require "cjson"
             local redis = require "resty.redis"
@@ -424,9 +393,6 @@ GET /t
             red:close()
             red2:close()
         ';
-    }
---- request
-GET /t
 --- response_body
 1: subscribe: ["subscribe","dog",1]
 1: failed to read reply: timeout
@@ -438,10 +404,9 @@ GET /t
 
 
 === TEST 6: call set_keepalive in subscribed mode
---- http_config eval: $::HttpConfig
---- config
+--- global_config eval: $::GlobalConfig
+--- server_config
     lua_socket_log_errors off;
-    location /t {
         content_by_lua '
             local cjson = require "cjson"
             local redis = require "resty.redis"
@@ -482,9 +447,6 @@ GET /t
             red:close()
             red2:close()
         ';
-    }
---- request
-GET /t
 --- response_body
 1: subscribe: ["subscribe","dog",1]
 1: failed to set keepalive: subscribed state
@@ -494,10 +456,9 @@ GET /t
 
 
 === TEST 7: call set_keepalive in unsubscribed mode
---- http_config eval: $::HttpConfig
---- config
+--- global_config eval: $::GlobalConfig
+--- server_config
     lua_socket_log_errors off;
-    location /t {
         content_by_lua '
             local cjson = require "cjson"
             local redis = require "resty.redis"
@@ -546,9 +507,6 @@ GET /t
             red:close()
             red2:close()
         ';
-    }
---- request
-GET /t
 --- response_body
 1: subscribe: ["subscribe","dog",1]
 1: unsubscribe: ["unsubscribe","dog",0]
@@ -560,9 +518,8 @@ GET /t
 
 
 === TEST 8: mix read_reply and other commands
---- http_config eval: $::HttpConfig
---- config
-    location /t {
+--- global_config eval: $::GlobalConfig
+--- server_config
         lua_socket_log_errors off;
         content_by_lua '
             local cjson = require "cjson"
@@ -642,7 +599,6 @@ GET /t
             red:close()
             red2:close()
         ';
-    }
 --- request
 GET /t
 --- response_body_like chop
