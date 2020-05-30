@@ -614,9 +614,7 @@ GET /t
 
 === TEST 9: multiple subscribe
 --- global_config eval: $::GlobalConfig
---- config
-    location /t {
-        lua_socket_log_errors off;
+--- server_config
         content_by_lua_block {
             local cjson = require "cjson"
             local redis = require "resty.redis"
@@ -654,7 +652,6 @@ GET /t
 
             red:close()
         }
-    }
 --- response_body
 1: subscribe: [["subscribe","dog",1],["subscribe","cat",2]]
 1: unsubscribe: ["unsubscribe","dog",1]
@@ -666,9 +663,7 @@ GET /t
 
 === TEST 10: multiple unsubscribe
 --- global_config eval: $::GlobalConfig
---- config
-    location /t {
-        lua_socket_log_errors off;
+--- server_config
         content_by_lua_block {
             local cjson = require "cjson"
             local redis = require "resty.redis"
@@ -704,7 +699,6 @@ GET /t
 
             red:close()
         }
-    }
 --- response_body_like
 ^1: unsubscribe: \[\["unsubscribe","(?:cat|dog)",1\],\["unsubscribe","(?:cat|dog)",0\]\]$
 --- no_error_log
@@ -714,9 +708,7 @@ GET /t
 
 === TEST 11: multiple psubscribe
 --- global_config eval: $::GlobalConfig
---- config
-    location /t {
-        lua_socket_log_errors off;
+--- server_config
         content_by_lua_block {
             local cjson = require "cjson"
             local redis = require "resty.redis"
@@ -754,7 +746,6 @@ GET /t
 
             red:close()
         }
-    }
 --- response_body
 1: subscribe: [["psubscribe","dog",1],["psubscribe","cat",2]]
 1: unsubscribe: ["punsubscribe","dog",1]
@@ -766,9 +757,7 @@ GET /t
 
 === TEST 12: multiple punsubscribe
 --- global_config eval: $::GlobalConfig
---- config
-    location /t {
-        lua_socket_log_errors off;
+--- server_config
         content_by_lua_block {
             local cjson = require "cjson"
             local redis = require "resty.redis"
@@ -804,7 +793,6 @@ GET /t
 
             red:close()
         }
-    }
 --- response_body_like
 ^1: unsubscribe: \[\["punsubscribe","(?:cat|dog)",1\],\["punsubscribe","(?:cat|dog)",0\]\]$
 --- no_error_log
@@ -814,9 +802,7 @@ GET /t
 
 === TEST 13: mix read_reply, subscribe, and psubscribe
 --- global_config eval: $::GlobalConfig
---- config
-    location /t {
-        lua_socket_log_errors off;
+--- server_config
         content_by_lua_block {
             local cjson = require "cjson"
             local redis = require "resty.redis"
@@ -932,7 +918,6 @@ GET /t
             red:close()
             red2:close()
         }
-    }
 --- response_body_like chop
 ^1: receive: \["p?message",("two"|"t\*o","two"),"foo"\]
 1: receive: \["p?message",("two"|"t\*o","two"),"foo"\]
