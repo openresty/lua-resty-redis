@@ -449,6 +449,31 @@ for i = 1, #common_cmds do
 end
 
 
+local function handle_subscribe_result(self, cmd, nargs, res)
+    local err
+    _check_subscribed(self, res)
+
+    if nargs <= 1 then
+        return res
+    end
+
+    local results = new_tab(nargs, 0)
+    results[1] = res
+    local sock = rawget(self, "_sock")
+
+    for i = 2, nargs do
+        res, err = _read_reply(self, sock)
+        if not res then
+            return nil, err
+        end
+
+        _check_subscribed(self, res)
+        results[i] = res
+    end
+
+    return results
+end
+
 for i = 1, #sub_commands do
     local cmd = sub_commands[i]
 
@@ -459,27 +484,48 @@ for i = 1, #sub_commands do
             end
 
             local nargs = select("#", ...)
-            local ress = new_tab(nargs, 0)
 
-            local res, err
-            for i = 1, nargs do
-                res, err =  _do_cmd(self, cmd, ...)
-                if not res then
-                    return nil, err
-                end
-
-                _check_subscribed(self, res)
-                ress[i] = res
+            local res, err = _do_cmd(self, cmd, ...)
+            if not res then
+                return nil, err
             end
 
-            if nargs <= 1 then
-                return res
-            end
-
-            return ress
+            return handle_subscribe_result(self, cmd, nargs, res)
         end
 end
 
+
+local function handle_unsubscribe_result(self, cmd, nargs, res)
+    local err
+    _check_unsubscribed(self, res)
+
+    if self._n_channel[cmd] == 0 or nargs == 1 then
+        return res
+    end
+
+    local results = new_tab(nargs, 0)
+    results[1] = res
+    local sock = rawget(self, "_sock")
+    local i = 2
+
+    while nargs == 0 or i <= nargs do
+        res, err = _read_reply(self, sock)
+        if not res then
+            return nil, err
+        end
+
+        results[i] = res
+        i = i + 1
+
+        _check_unsubscribed(self, res)
+        if self._n_channel[cmd] == 0 then
+            -- exit the loop for unsubscribe() call
+            break
+        end
+    end
+
+    return results
+end
 
 for i = 1, #unsub_commands do
     local cmd = unsub_commands[i]
@@ -492,31 +538,13 @@ for i = 1, #unsub_commands do
             end
 
             local nargs = select("#", ...)
-            local ress = new_tab(nargs, 0)
 
-            local res, err
-            local i = 1
-            while nargs == 0 or i <= nargs do
-                res, err =  _do_cmd(self, cmd, ...)
-                if not res then
-                    return nil, err
-                end
-
-                _check_unsubscribed(self, res)
-                ress[i] = res
-                i = i + 1
-
-                if self._n_channel[cmd] == 0 then
-                    -- exit the loop for unsubscribe() call
-                    break
-                end
+            local res, err = _do_cmd(self, cmd, ...)
+            if not res then
+                return nil, err
             end
 
-            if i <= 2 then
-                return res
-            end
-
-            return ress
+            return handle_unsubscribe_result(self, cmd, nargs, res)
         end
 end
 

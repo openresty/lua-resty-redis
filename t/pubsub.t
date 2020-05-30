@@ -659,8 +659,8 @@ GET /t
 GET /t
 --- response_body
 1: subscribe: [["subscribe","dog",1],["subscribe","cat",2]]
-1: unsubscribe: ["subscribe","dog",2]
-1: unsubscribe: ["subscribe","cat",2]
+1: unsubscribe: ["unsubscribe","dog",1]
+1: unsubscribe: ["unsubscribe","cat",0]
 --- no_error_log
 [error]
 
@@ -763,8 +763,8 @@ GET /t
 GET /t
 --- response_body
 1: subscribe: [["psubscribe","dog",1],["psubscribe","cat",2]]
-1: unsubscribe: ["psubscribe","dog",2]
-1: unsubscribe: ["psubscribe","cat",2]
+1: unsubscribe: ["punsubscribe","dog",1]
+1: unsubscribe: ["punsubscribe","cat",0]
 --- no_error_log
 [error]
 
