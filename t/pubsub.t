@@ -613,7 +613,7 @@ GET /t
 
 
 === TEST 9: multiple subscribe
---- http_config eval: $::HttpConfig
+--- global_config eval: $::GlobalConfig
 --- config
     location /t {
         lua_socket_log_errors off;
@@ -655,8 +655,6 @@ GET /t
             red:close()
         }
     }
---- request
-GET /t
 --- response_body
 1: subscribe: [["subscribe","dog",1],["subscribe","cat",2]]
 1: unsubscribe: ["unsubscribe","dog",1]
@@ -667,7 +665,7 @@ GET /t
 
 
 === TEST 10: multiple unsubscribe
---- http_config eval: $::HttpConfig
+--- global_config eval: $::GlobalConfig
 --- config
     location /t {
         lua_socket_log_errors off;
@@ -707,8 +705,6 @@ GET /t
             red:close()
         }
     }
---- request
-GET /t
 --- response_body_like
 ^1: unsubscribe: \[\["unsubscribe","(?:cat|dog)",1\],\["unsubscribe","(?:cat|dog)",0\]\]$
 --- no_error_log
@@ -717,7 +713,7 @@ GET /t
 
 
 === TEST 11: multiple psubscribe
---- http_config eval: $::HttpConfig
+--- global_config eval: $::GlobalConfig
 --- config
     location /t {
         lua_socket_log_errors off;
@@ -759,8 +755,6 @@ GET /t
             red:close()
         }
     }
---- request
-GET /t
 --- response_body
 1: subscribe: [["psubscribe","dog",1],["psubscribe","cat",2]]
 1: unsubscribe: ["punsubscribe","dog",1]
@@ -771,7 +765,7 @@ GET /t
 
 
 === TEST 12: multiple punsubscribe
---- http_config eval: $::HttpConfig
+--- global_config eval: $::GlobalConfig
 --- config
     location /t {
         lua_socket_log_errors off;
@@ -811,8 +805,6 @@ GET /t
             red:close()
         }
     }
---- request
-GET /t
 --- response_body_like
 ^1: unsubscribe: \[\["punsubscribe","(?:cat|dog)",1\],\["punsubscribe","(?:cat|dog)",0\]\]$
 --- no_error_log
@@ -821,7 +813,7 @@ GET /t
 
 
 === TEST 13: mix read_reply, subscribe, and psubscribe
---- http_config eval: $::HttpConfig
+--- global_config eval: $::GlobalConfig
 --- config
     location /t {
         lua_socket_log_errors off;
@@ -941,8 +933,6 @@ GET /t
             red2:close()
         }
     }
---- request
-GET /t
 --- response_body_like chop
 ^1: receive: \["p?message",("two"|"t\*o","two"),"foo"\]
 1: receive: \["p?message",("two"|"t\*o","two"),"foo"\]
