@@ -352,9 +352,9 @@ If the redis object is not in the Redis pipelining mode, then this method is a n
 
 hmset
 -----
-`syntax: red:hmset(myhash, field1, value1, field2, value2, ...)`
+`syntax: res, err = red:hmset(myhash, field1, value1, field2, value2, ...)`
 
-`syntax: red:hmset(myhash, { field1 = value1, field2 = value2, ... })`
+`syntax: res, err = red:hmset(myhash, { field1 = value1, field2 = value2, ... })`
 
 Special wrapper for the Redis "hmset" command.
 
