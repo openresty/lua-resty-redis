@@ -77,7 +77,7 @@ Synopsis
 
                 -- or connect to a unix domain socket file listened
                 -- by a redis server:
-                --     local ok, err = red:connect("unix:/path/to/redis.sock")
+                --     local ok, err = red:connect("unix:///path/to/redis.sock")
 
                 local ok, err = red:connect("127.0.0.1", 6379)
                 if not ok then
