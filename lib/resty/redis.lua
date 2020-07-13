@@ -140,9 +140,12 @@ function _M.connect(self, host, port_or_opts, opts)
     local ok, err
 
     if unix then
-        ok, err = sock:connect(host, port_or_opts)
-        opts = port_or_opts
-
+        if port_or_opts ~= nil then
+            ok, err = sock:connect(host, port_or_opts)
+            opts = port_or_opts
+        else
+            ok, err = sock:connect(host)
+        end
     else
         ok, err = sock:connect(host, port_or_opts, opts)
     end
