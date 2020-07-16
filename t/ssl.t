@@ -244,3 +244,49 @@ failed to connect: failed to do ssl handshake: 18: self signed certificate
     }
 --- response_body
 ok
+
+
+
+=== TEST 6: non-ssl connection to unix socket (issue #187)
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:set_timeout(100)
+
+            local ok, err = red:connect("unix:$TEST_NGINX_HTML_DIR/nginx-ssl.sock")
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            ngx.say("ok")
+        }
+    }
+--- response_body
+ok
+
+
+
+=== TEST 7: non-ssl connection to unix socket with second argument nil (issue #187)
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:set_timeout(100)
+
+            local ok, err = red:connect("unix:$TEST_NGINX_HTML_DIR/nginx-ssl.sock",nil)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            ngx.say("ok")
+        }
+    }
+--- response_body
+ok
