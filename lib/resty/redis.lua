@@ -230,6 +230,9 @@ local function _read_reply(self, sock)
 
         local dummy, err = sock:receive(2) -- ignore CRLF
         if not dummy then
+            if err == "timeout" then
+                sock:close()
+            end
             return nil, err
         end
 
