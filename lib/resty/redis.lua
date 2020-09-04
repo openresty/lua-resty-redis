@@ -67,6 +67,14 @@ function _M.new(self)
 end
 
 
+function _M.register_module_prefix(mod)
+    _M[mod] = function(self)
+        self._module_prefix = mod .. "."
+        return self
+    end
+end
+
+
 function _M.set_timeout(self, timeout)
     local sock = rawget(self, "_sock")
     if not sock then
@@ -399,12 +407,23 @@ function _M.read_reply(self)
 end
 
 
+local function do_cmd(self, cmd, ...)
+    local module_prefix = rawget(self, "_module_prefix")
+    if module_prefix then
+    self._module_prefix = nil
+        return _do_cmd(self, module_prefix .. cmd, ...)
+    end
+
+    return _do_cmd(self, cmd, ...)
+end
+
+
 for i = 1, #common_cmds do
     local cmd = common_cmds[i]
 
     _M[cmd] =
         function (self, ...)
-            return _do_cmd(self, cmd, ...)
+            return do_cmd(self, cmd, ...)
         end
 end
 
@@ -539,7 +558,7 @@ end
 setmetatable(_M, {__index = function(self, cmd)
     local method =
         function (self, ...)
-            return _do_cmd(self, cmd, ...)
+            return do_cmd(self, cmd, ...)
         end
 
     -- cache the lazily generated method in our
