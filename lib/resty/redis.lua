@@ -410,7 +410,7 @@ end
 local function do_cmd(self, cmd, ...)
     local module_prefix = rawget(self, "_module_prefix")
     if module_prefix then
-    self._module_prefix = nil
+        self._module_prefix = nil
         return _do_cmd(self, module_prefix .. cmd, ...)
     end
 
