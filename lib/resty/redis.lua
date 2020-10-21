@@ -162,7 +162,7 @@ function _M.connect(self, host, port_or_opts, opts)
         return ok, err
     end
 
-    if opts and opts.ssl then
+    if opts and opts.ssl and sock:getreusedtimes() == 0 then
         ok, err = sock:sslhandshake(false, opts.server_name, opts.ssl_verify)
         if not ok then
             return ok, "failed to do ssl handshake: " .. err
