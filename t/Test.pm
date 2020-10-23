@@ -17,7 +17,6 @@ our $GlobalConfig = qq{
 
 $ENV{TEST_NGINX_RESOLVER} = '8.8.8.8';
 $ENV{TEST_NGINX_REDIS_PORT} ||= 6379;
-$ENV{TEST_SUBSYSTEM} //= "stream";
 
 no_long_string();
 
@@ -25,7 +24,7 @@ add_block_preprocessor(sub {
     my $block = shift;
 
     if (!defined $block->http_only) {
-        if ($ENV{TEST_SUBSYSTEM} eq "stream") {
+        if (defined($ENV{TEST_SUBSYSTEM}) && $ENV{TEST_SUBSYSTEM} eq "stream") {
             if (!defined $block->stream_config) {
                 $block->set_value("stream_config", $block->global_config);
             }
