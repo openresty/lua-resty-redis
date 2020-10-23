@@ -17,6 +17,7 @@ our $GlobalConfig = qq{
 
 $ENV{TEST_NGINX_RESOLVER} = '8.8.8.8';
 $ENV{TEST_NGINX_REDIS_PORT} ||= 6379;
+$ENV{TEST_SUBSYSTEM} //= "stream";
 
 no_long_string();
 
