@@ -804,7 +804,7 @@ failed to connect: connection refused
 --- response_body
 failed to connect: timeout
 --- no_error_log
-[alert]
+[error]
 
 
 
@@ -842,7 +842,7 @@ failed to connect: timeout
 flushall: OK
 failed to blpop: timeout
 --- no_error_log
-[alert]
+[error]
 
 
 
@@ -880,7 +880,7 @@ failed to blpop: timeout
 flushall: OK
 failed to blpop: timeout
 --- no_error_log
-[alert]
+[error]
 
 
 
