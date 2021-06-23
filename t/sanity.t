@@ -842,7 +842,7 @@ lua tcp socket connect timed out
 flushall: OK
 failed to blpop: timeout
 --- error_log
-lua tcp socket send timed out
+lua tcp socket read timed out
 
 
 
