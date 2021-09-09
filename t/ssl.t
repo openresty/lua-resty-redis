@@ -309,6 +309,7 @@ ok
                     ngx.say("failed to connect: ", err)
                     return
                 end
+                ngx.say("sock reusetimes: ", red:get_reused_times())
 
                 ok, err = red:select(1)
                 if not ok then
@@ -335,6 +336,8 @@ ok
             connect_set(red)
         }
     }
---- response_body
+--- response_body eval
+qr/sock reusetimes: (0|2)
 set dog: OK
-set dog: OK
+sock reusetimes: (1|3)
+set dog: OK/
