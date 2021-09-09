@@ -69,7 +69,7 @@ end
 
 function _M.register_module_prefix(mod)
     _M[mod] = function(self)
-        self._module_prefix = mod .. "."
+        self._module_prefix = mod
         return self
     end
 end
@@ -411,7 +411,7 @@ local function do_cmd(self, cmd, ...)
     local module_prefix = rawget(self, "_module_prefix")
     if module_prefix then
         self._module_prefix = nil
-        return _do_cmd(self, module_prefix .. cmd, ...)
+        return _do_cmd(self, module_prefix .. "." .. cmd, ...)
     end
 
     return _do_cmd(self, cmd, ...)
