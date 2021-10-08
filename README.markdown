@@ -569,6 +569,42 @@ Then the output will be
 
 [Back to TOC](#table-of-contents)
 
+Redis Module
+==================
+
+This library supports the Redis module. Here is an example with RedisBloom module:
+
+```lua
+    local cjson = require "cjson"
+    local redis = require "resty.redis"
+    -- register the module prefix "bf" for RedisBloom
+    redis.register_module_prefix("bf")
+
+    local red = redis:new()
+
+    local ok, err = red:connect("127.0.0.1", 6379)
+    if not ok then
+        ngx.say("failed to connect: ", err)
+        return
+    end
+
+    -- call BF.ADD command with the prefix 'bf'
+    res, err = red:bf():add("dog", 1)
+    if not res then
+        ngx.say(err)
+        return
+    end
+    ngx.say("receive: ", cjson.encode(res))
+
+    -- call BF.EXISTS command
+    res, err = red:bf():exists("dog")
+    if not res then
+        ngx.say(err)
+        return
+    end
+    ngx.say("receive: ", cjson.encode(res))
+```
+
 Load Balancing and Failover
 ===========================
 
