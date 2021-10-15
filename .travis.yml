@@ -1,5 +1,5 @@
 sudo: required
-dist: trusty
+dist: bionic
 
 os: linux
 
@@ -75,5 +75,5 @@ script:
   - nginx -V
   - ldd `which nginx`|grep -E 'luajit|ssl|pcre'
   - docker run -d -p 6379:6379 --rm --name redis-redisbloom redislabs/rebloom:latest
-  - TEST_SUBSYSTEM=http prove -r t
-  - TEST_SUBSYSTEM=stream prove -r t
+  - TEST_SUBSYSTEM=http prove -I. -r t
+  - TEST_SUBSYSTEM=stream prove -I. -r t
