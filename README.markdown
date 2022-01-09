@@ -69,6 +69,9 @@ Synopsis
 
     server {
         location /test {
+            -- need to specify the resolver to resolve the hostname
+            resolver 8.8.8.8;
+
             content_by_lua_block {
                 local redis = require "resty.redis"
                 local red = redis:new()
@@ -79,7 +82,12 @@ Synopsis
                 -- by a redis server:
                 --     local ok, err = red:connect("unix:/path/to/redis.sock")
 
+                -- connect via ip address directly
                 local ok, err = red:connect("127.0.0.1", 6379)
+
+                -- or connect via hostname, need to specify resolver just like above
+                local ok, err = red:connect("redis.openresty.com", 6379)
+
                 if not ok then
                     ngx.say("failed to connect: ", err)
                     return
