@@ -680,7 +680,34 @@ each request.
 
 [Back to TOC](#table-of-contents)
 
-Installation
+Installation - Build from source 
+============
+
+```sh
+# Clone latest release , assuming v0.29
+wget https://github.com/openresty/lua-resty-redis/archive/refs/tags/v0.29.tar.gz
+
+# Extract
+tar -xvzf v0.29.tar.gz
+
+# go into directory
+cd lua-resty-redis-0.29
+
+## Export vars (optional)
+# PREFIX is usually /usr/local 
+export PREFIX = /usr/local/
+# Path of lua libs
+export LUAJIT_INC = /usr/local/lib
+export LUA_INCLUDE_DIR = /usr/local/include/luajit-2.0
+
+# Compile and Install
+make install
+
+# Now compiled path will be outputted 
+# /usr/local/lib/lua/resty = lua_package_path in nginx conf
+```
+
+Installation Notes
 ============
 
 If you are using the OpenResty bundle (http://openresty.org ), then
