@@ -69,7 +69,7 @@ Synopsis
 
     server {
         location /test {
-            -- need to specify the resolver to resolve the hostname
+            # need to specify the resolver to resolve the hostname
             resolver 8.8.8.8;
 
             content_by_lua_block {
