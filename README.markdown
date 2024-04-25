@@ -175,7 +175,7 @@ The Redis command arguments can be directly fed into the corresponding method ca
     local res, err = red:get("key")
 ```
 
-Similarly, the "LRANGE" redis command accepts threee arguments, then you should call the "lrange" method like this:
+Similarly, the "LRANGE" redis command accepts three arguments, then you should call the "lrange" method like this:
 
 ```lua
     local res, err = red:lrange("nokey", 0, 1)
