@@ -87,13 +87,14 @@ function _M.new(self)
     if not sock then
         return nil, err
     end
-    return setmetatable({ _sock = sock,
+    local redis = setmetatable({ _sock = sock,
                           _subscribed = false,
                           _n_channel = {
                             unsubscribe = 0,
                             punsubscribe = 0,
                           },
                         }, mt)
+    return redis
 end
 
 
