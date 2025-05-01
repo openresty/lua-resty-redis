@@ -49,7 +49,7 @@ local common_cmds = {
 
 
 local sub_commands = {
-    "subscribe", "psubscribe"
+    "subscribe", "psubscribe", "blpop", "brpop"
 }
 
 
