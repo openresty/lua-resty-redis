@@ -52,6 +52,9 @@ local sub_commands = {
     "subscribe", "psubscribe"
 }
 
+local blocking_commands = {
+    "blpop", "brpop"
+}
 
 local unsub_commands = {
     "unsubscribe", "punsubscribe"
@@ -243,7 +246,7 @@ _M.close = close
 local function _read_reply(self, sock)
     local line, err = sock:receive()
     if not line then
-        if err == "timeout" and not rawget(self, "_subscribed") then
+        if err == "timeout" and not rawget(self, "_subscribed") and not rawget(self, "_blocking") then
             sock:close()
         end
         return nil, err
@@ -502,6 +505,17 @@ for i = 1, #common_cmds do
         end
 end
 
+for i = 1, #blocking_commands do
+    local cmd = blocking_commands[i]
+
+    _M[cmd] =
+        function (self, ...)
+            if not rawget(self, "_blocking") then
+                self._blocking = true
+            end
+            return do_cmd(self, cmd, ...)
+        end
+end
 
 local function handle_subscribe_result(self, cmd, nargs, res)
     local err
