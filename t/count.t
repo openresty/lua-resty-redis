@@ -22,6 +22,6 @@ __DATA__
             ngx.say("size: ", n)
         ';
 --- response_body
-size: 56
+size: 58
 --- no_error_log
 [error]
