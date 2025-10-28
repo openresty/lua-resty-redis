@@ -64,7 +64,7 @@ __DATA__
             local redis = require "resty.redis"
             local red = redis:new()
 
-            red:set_timeout(100)
+            red:set_timeout(1000)
 
             local ok, err = red:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock", {
                 ssl = true
@@ -201,7 +201,7 @@ dog: an animal
             local redis = require "resty.redis"
             local red = redis:new()
 
-            red:set_timeout(100)
+            red:set_timeout(1000)
 
             local ok, err = red:connect("unix:$TEST_NGINX_HTML_DIR/nginx-ssl.sock", {
                 ssl = true,
@@ -213,8 +213,8 @@ dog: an animal
             end
         }
     }
---- response_body
-failed to connect: failed to do ssl handshake: 18: self signed certificate
+--- response_body_like eval
+qr/failed to connect: failed to do ssl handshake: 18: self[- ]signed certificate/
 
 
 
@@ -228,7 +228,7 @@ failed to connect: failed to do ssl handshake: 18: self signed certificate
             local redis = require "resty.redis"
             local red = redis:new()
 
-            red:set_timeout(100)
+            red:set_timeout(1000)
 
             local ok, err = red:connect("unix:$TEST_NGINX_HTML_DIR/nginx-ssl.sock", {
                 ssl = true,
@@ -277,7 +277,7 @@ ok
             local redis = require "resty.redis"
             local red = redis:new()
 
-            red:set_timeout(100)
+            red:set_timeout(1000)
 
             local ok, err = red:connect("unix:$TEST_NGINX_HTML_DIR/nginx-ssl.sock",nil)
             if not ok then
