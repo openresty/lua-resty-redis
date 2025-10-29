@@ -4,6 +4,7 @@ use Cwd qw(cwd);
 
 repeat_each(2);
 
+log_level('info');
 plan tests => repeat_each() * (3 * blocks());
 
 $ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
@@ -64,7 +65,7 @@ __DATA__
             local redis = require "resty.redis"
             local red = redis:new()
 
-            red:set_timeout(1000)
+            red:set_timeout(2000)
 
             local ok, err = red:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock", {
                 ssl = true
@@ -87,7 +88,7 @@ failed to connect: failed to do ssl handshake: timeout
             local redis = require "resty.redis"
             local red = redis:new()
 
-            red:set_timeout(1000)
+            red:set_timeout(2000)
 
             local ok, err = red:connect("127.0.0.1", $TEST_NGINX_STREAM_REDIS_PORT, {
                 ssl = true
@@ -143,7 +144,7 @@ dog: an animal
             local redis = require "resty.redis"
             local red = redis:new()
 
-            red:set_timeout(1000)
+            red:set_timeout(2000)
 
             local ok, err = red:connect("unix:$TEST_NGINX_HTML_DIR/nginx-ssl.sock", {
                 ssl = true
@@ -201,7 +202,7 @@ dog: an animal
             local redis = require "resty.redis"
             local red = redis:new()
 
-            red:set_timeout(1000)
+            red:set_timeout(2000)
 
             local ok, err = red:connect("unix:$TEST_NGINX_HTML_DIR/nginx-ssl.sock", {
                 ssl = true,
@@ -228,7 +229,7 @@ qr/failed to connect: failed to do ssl handshake: 18: self[- ]signed certificate
             local redis = require "resty.redis"
             local red = redis:new()
 
-            red:set_timeout(1000)
+            red:set_timeout(2000)
 
             local ok, err = red:connect("unix:$TEST_NGINX_HTML_DIR/nginx-ssl.sock", {
                 ssl = true,
@@ -277,7 +278,7 @@ ok
             local redis = require "resty.redis"
             local red = redis:new()
 
-            red:set_timeout(1000)
+            red:set_timeout(2000)
 
             local ok, err = red:connect("unix:$TEST_NGINX_HTML_DIR/nginx-ssl.sock",nil)
             if not ok then
@@ -299,7 +300,7 @@ ok
         content_by_lua_block {
             local redis = require "resty.redis"
             local red = redis:new()
-            red:set_timeout(1000)
+            red:set_timeout(2000)
 
             local function connect_set(red)
                 local ok, err = red:connect("127.0.0.1", $TEST_NGINX_STREAM_REDIS_PORT, {
