@@ -31,7 +31,7 @@ env:
     - LUAJIT_LIB=$LUAJIT_PREFIX/lib
     - LUAJIT_INC=$LUAJIT_PREFIX/include/luajit-2.1
     - LUA_INCLUDE_DIR=$LUAJIT_INC
-    - OPENSSL_PREFIX=/opt/ssl
+    - OPENSSL_PREFIX=/usr/local/openresty/openssl3
     - OPENSSL_LIB=$OPENSSL_PREFIX/lib
     - OPENSSL_INC=$OPENSSL_PREFIX/include
     - OPENSSL_VER=1.1.1l
@@ -39,15 +39,18 @@ env:
     - TEST_NGINX_SLEEP=0.006
     - LUACHECK_VER=0.21.1
   jobs:
-    - NGINX_VERSION=1.29.2
+    - NGINX_VERSION=1.29.4
 
 before_install:
   - sudo luarocks install luacheck $LUACHECK_VER
   - luacheck -q .
+  - wget -O - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
+  - echo "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/openresty.list
+  - sudo apt-get update
+  - sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends openresty-pcre2 openresty-openssl3 openresty-pcre2-dev openresty-openssl3-dev
 
 install:
   - if [ ! -d download-cache ]; then mkdir download-cache; fi
-  - if [ ! -f download-cache/openssl-$OPENSSL_VER.tar.gz ]; then wget -O download-cache/openssl-$OPENSSL_VER.tar.gz https://www.openssl.org/source/openssl-$OPENSSL_VER.tar.gz; fi
   - sudo apt-get install -qq -y cpanminus axel
   - sudo cpanm --notest Test::Nginx > build.log 2>&1 || (cat build.log && exit 1)
   - git clone https://github.com/openresty/openresty.git ../openresty
@@ -67,12 +70,6 @@ script:
   - make -j$JOBS CCDEBUG=-g Q= PREFIX=$LUAJIT_PREFIX CC=$CC XCFLAGS='-DLUA_USE_APICHECK -DLUA_USE_ASSERT' > build.log 2>&1 || (cat build.log && exit 1)
   - sudo make install PREFIX=$LUAJIT_PREFIX > build.log 2>&1 || (cat build.log && exit 1)
   - cd ../lua-cjson && make && sudo PATH=$PATH make install && cd ..
-  - tar zxf download-cache/openssl-$OPENSSL_VER.tar.gz
-  - cd openssl-$OPENSSL_VER/
-  - ./config shared --prefix=$OPENSSL_PREFIX -DPURIFY > build.log 2>&1 || (cat build.log && exit 1)
-  - make -j$JOBS > build.log 2>&1 || (cat build.log && exit 1)
-  - sudo make PATH=$PATH install_sw > build.log 2>&1 || (cat build.log && exit 1)
-  - cd ..
   - export PATH=$PWD/work/nginx/sbin:$PWD/nginx-devel-utils:$PATH
   - export NGX_BUILD_CC=$CC
   - ngx-build $NGINX_VERSION --without-pcre2 --with-ipv6 --with-http_realip_module --with-http_ssl_module --with-cc-opt="-I$OPENSSL_INC" --with-ld-opt="-L$OPENSSL_LIB -Wl,-rpath,$OPENSSL_LIB" --add-module=../echo-nginx-module --add-module=../lua-nginx-module --add-module=../stream-lua-nginx-module --with-stream --with-stream_ssl_module --with-debug > build.log 2>&1 || (cat build.log && exit 1)
