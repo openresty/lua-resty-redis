@@ -39,7 +39,7 @@ env:
     - TEST_NGINX_SLEEP=0.006
     - LUACHECK_VER=0.21.1
   jobs:
-    - NGINX_VERSION=1.29.4
+    - NGINX_VERSION=1.29.8
 
 before_install:
   - sudo luarocks install luacheck $LUACHECK_VER
@@ -52,7 +52,7 @@ before_install:
 install:
   - if [ ! -d download-cache ]; then mkdir download-cache; fi
   - sudo apt-get install -qq -y cpanminus axel
-  - sudo cpanm --notest Test::Nginx > build.log 2>&1 || (cat build.log && exit 1)
+  - cpanm --sudo --notest Test::Nginx IPC::Run Test2::Util > build.log 2>&1 || (cat build.log && exit 1)
   - git clone https://github.com/openresty/openresty.git ../openresty
   - git clone https://github.com/openresty/nginx-devel-utils.git
   - git clone https://github.com/openresty/lua-cjson.git
