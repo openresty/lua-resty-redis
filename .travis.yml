@@ -34,12 +34,14 @@ env:
     - OPENSSL_PREFIX=/usr/local/openresty/openssl3
     - OPENSSL_LIB=$OPENSSL_PREFIX/lib
     - OPENSSL_INC=$OPENSSL_PREFIX/include
-    - OPENSSL_VER=1.1.1l
+    - PCRE_PREFIX=/usr/local/openresty/pcre2
+    - PCRE_LIB=$PCRE_PREFIX/lib
+    - PCRE_INC=$PCRE_PREFIX/include
     - LD_LIBRARY_PATH=$LUAJIT_LIB:$LD_LIBRARY_PATH
     - TEST_NGINX_SLEEP=0.006
     - LUACHECK_VER=0.21.1
   jobs:
-    - NGINX_VERSION=1.31.0
+    - NGINX_VERSION=1.31.3
 
 before_install:
   - sudo luarocks install luacheck $LUACHECK_VER
@@ -72,7 +74,7 @@ script:
   - cd ../lua-cjson && make && sudo PATH=$PATH make install && cd ..
   - export PATH=$PWD/work/nginx/sbin:$PWD/nginx-devel-utils:$PATH
   - export NGX_BUILD_CC=$CC
-  - ngx-build $NGINX_VERSION --without-pcre2 --with-ipv6 --with-http_realip_module --with-http_ssl_module --with-cc-opt="-I$OPENSSL_INC" --with-ld-opt="-L$OPENSSL_LIB -Wl,-rpath,$OPENSSL_LIB" --add-module=../echo-nginx-module --add-module=../lua-nginx-module --add-module=../stream-lua-nginx-module --with-stream --with-stream_ssl_module --with-debug > build.log 2>&1 || (cat build.log && exit 1)
+  - ngx-build $NGINX_VERSION --with-ipv6 --with-http_realip_module --with-http_ssl_module --with-cc-opt="-I$PCRE_INC -I$OPENSSL_INC" --with-ld-opt="-L$PCRE_LIB -L$OPENSSL_LIB -Wl,-rpath,$PCRE_LIB:$OPENSSL_LIB" --add-module=../echo-nginx-module --add-module=../lua-nginx-module --add-module=../stream-lua-nginx-module --with-stream --with-stream_ssl_module --with-debug > build.log 2>&1 || (cat build.log && exit 1)
   - nginx -V
   - ldd `which nginx`|grep -E 'luajit|ssl|pcre'
   - docker run -d -p 6379:6379 --rm --name redis-redisbloom redislabs/rebloom:latest
