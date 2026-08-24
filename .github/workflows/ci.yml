@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: nginx 1.31.4
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            build-essential \
+            ca-certificates \
+            cpanminus \
+            git \
+            luarocks \
+            wget
+
+      - name: Build and test
+        env:
+          CC: gcc
+          NGINX_VERSION: 1.31.4
+        run: |
+          set -e
+          mkdir -p download-cache
+          export JOBS=3
+          export NGX_BUILD_JOBS=$JOBS
+          export LUAJIT_PREFIX=/opt/luajit21
+          export LUAJIT_LIB=$LUAJIT_PREFIX/lib
+          export LUAJIT_INC=$LUAJIT_PREFIX/include/luajit-2.1
+          export LUA_INCLUDE_DIR=$LUAJIT_INC
+          export OPENSSL_PREFIX=/usr/local/openresty/openssl3
+          export OPENSSL_LIB=$OPENSSL_PREFIX/lib
+          export OPENSSL_INC=$OPENSSL_PREFIX/include
+          export PCRE_PREFIX=/usr/local/openresty/pcre2
+          export PCRE_LIB=$PCRE_PREFIX/lib
+          export PCRE_INC=$PCRE_PREFIX/include
+          export LD_LIBRARY_PATH=$LUAJIT_LIB:$LD_LIBRARY_PATH
+          export TEST_NGINX_SLEEP=0.006
+          export LUACHECK_VER=0.21.1
+          sudo luarocks install luacheck $LUACHECK_VER
+          luacheck -q .
+          wget -O - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
+          echo "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/openresty.list
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends openresty-pcre2 openresty-openssl3 openresty-pcre2-dev openresty-openssl3-dev
+          if [ ! -d download-cache ]; then mkdir download-cache; fi
+          sudo apt-get install -qq -y cpanminus axel
+          cpanm --sudo --notest Test::Nginx IPC::Run Test2::Util > build.log 2>&1 || (cat build.log && exit 1)
+          git clone https://github.com/openresty/openresty.git ../openresty
+          git clone https://github.com/openresty/nginx-devel-utils.git
+          git clone https://github.com/openresty/lua-cjson.git
+          git clone https://github.com/openresty/lua-nginx-module.git ../lua-nginx-module
+          git clone https://github.com/openresty/stream-lua-nginx-module.git ../stream-lua-nginx-module
+          git clone https://github.com/openresty/lua-resty-core.git ../lua-resty-core
+          git clone https://github.com/openresty/lua-resty-lrucache.git ../lua-resty-lrucache
+          git clone https://github.com/openresty/echo-nginx-module.git ../echo-nginx-module
+          git clone https://github.com/openresty/no-pool-nginx.git ../no-pool-nginx
+          git clone -b v2.1-agentzh https://github.com/openresty/luajit2.git
+          sudo iptables -A OUTPUT -p tcp --dst 127.0.0.2 --dport 12345 -j DROP
+          cd luajit2/
+          make -j$JOBS CCDEBUG=-g Q= PREFIX=$LUAJIT_PREFIX CC=$CC XCFLAGS='-DLUA_USE_APICHECK -DLUA_USE_ASSERT' > build.log 2>&1 || (cat build.log && exit 1)
+          sudo make install PREFIX=$LUAJIT_PREFIX > build.log 2>&1 || (cat build.log && exit 1)
+          cd ../lua-cjson && make && sudo PATH=$PATH make install && cd ..
+          export PATH=$PWD/work/nginx/sbin:$PWD/nginx-devel-utils:$PATH
+          export NGX_BUILD_CC=$CC
+          ngx-build $NGINX_VERSION --with-ipv6 --with-http_realip_module --with-http_ssl_module --with-cc-opt="-I$PCRE_INC -I$OPENSSL_INC" --with-ld-opt="-L$PCRE_LIB -L$OPENSSL_LIB -Wl,-rpath,$PCRE_LIB:$OPENSSL_LIB" --add-module=../echo-nginx-module --add-module=../lua-nginx-module --add-module=../stream-lua-nginx-module --with-stream --with-stream_ssl_module --with-debug > build.log 2>&1 || (cat build.log && exit 1)
+          nginx -V
+          ldd `which nginx`|grep -E 'luajit|ssl|pcre'
+          docker run -d -p 6379:6379 --rm --name redis-redisbloom redislabs/rebloom:latest
+          TEST_SUBSYSTEM=http prove -I. -r t
+          TEST_SUBSYSTEM=stream prove -I. -r t
