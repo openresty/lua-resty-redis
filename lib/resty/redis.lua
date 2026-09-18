@@ -774,10 +774,15 @@ local function update_multi_state(self, cmd, res)
 end
 
 
-local function do_multi_cmd(self, cmd)
+local function do_multi_cmd(self, cmd, ...)
+    -- Prefixed commands do not change Redis transaction state.
+    if rawget(self, "_module_prefix") then
+        return do_cmd(self, cmd, ...)
+    end
+
     local reqs = rawget(self, "_reqs")
     if reqs then
-        local res, err = do_cmd(self, cmd)
+        local res, err = do_cmd(self, cmd, ...)
 
         local txn_reqs = rawget(self, "_txn_reqs")
         if not txn_reqs then
@@ -789,25 +794,25 @@ local function do_multi_cmd(self, cmd)
         return res, err
     end
 
-    local res, err = do_cmd(self, cmd)
+    local res, err = do_cmd(self, cmd, ...)
     update_multi_state(self, cmd, res)
 
     return res, err
 end
 
 
-function _M.multi(self)
-    return do_multi_cmd(self, "multi")
+function _M.multi(self, ...)
+    return do_multi_cmd(self, "multi", ...)
 end
 
 
-function _M.exec(self)
-    return do_multi_cmd(self, "exec")
+function _M.exec(self, ...)
+    return do_multi_cmd(self, "exec", ...)
 end
 
 
-function _M.discard(self)
-    return do_multi_cmd(self, "discard")
+function _M.discard(self, ...)
+    return do_multi_cmd(self, "discard", ...)
 end
 
 
