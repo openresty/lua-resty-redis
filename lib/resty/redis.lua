@@ -191,6 +191,14 @@ function _M.connect(self, host, port_or_opts, opts)
     local db, username, password, tcp_keepalive
     if opts then
         db = opts.db
+        if db ~= nil then
+            local typ = type(db)
+            db = tonumber(db)
+            if db == nil then
+                error("bad option db: number expected, got " .. typ, 2)
+            end
+        end
+
         tcp_keepalive = opts.tcp_keepalive
 
         password = opts.password
@@ -205,13 +213,14 @@ function _M.connect(self, host, port_or_opts, opts)
 
         if (db or username) and not opts.pool then
             -- a pool per database / ACL user, otherwise a pooled connection
-            -- would carry its SELECT/AUTH state over to the next user (issue #53)
+            -- would carry its SELECT/AUTH state over to the next user (issue #53);
+            -- the numeric db comes first so that no user name can impersonate it
             local pool = unix and host or (host .. ":" .. port_or_opts)
-            if username then
-                pool = pool .. "/" .. username
-            end
             if db then
-                pool = pool .. "/" .. db
+                pool = pool .. "/db=" .. db
+            end
+            if username then
+                pool = pool .. "/user=" .. username
             end
 
             local copy = {}
@@ -742,43 +751,75 @@ function _M.hmset(self, hashname, ...)
 end
 
 
+function _M.hmget(self, hashname, ...)
+    if select("#", ...) == 1 and type((...)) == "table" then
+        return do_cmd(self, "hmget", hashname, unpack((...)))
+    end
+
+    return do_cmd(self, "hmget", hashname, ...)
+end
+
+
+-- the connection must not be put back into the pool while a transaction is
+-- open on the server (issue #176): MULTI marks it, and only a confirmed EXEC
+-- or DISCARD reply clears it. Pipelined commands are settled when their
+-- replies are read in commit_pipeline().
+local function update_multi_state(self, cmd, res)
+    if cmd == "multi" then
+        self._in_multi = true
+
+    elseif res then
+        self._in_multi = false
+    end
+end
+
+
+local function do_multi_cmd(self, cmd)
+    local reqs = rawget(self, "_reqs")
+    if reqs then
+        local res, err = do_cmd(self, cmd)
+
+        local txn_reqs = rawget(self, "_txn_reqs")
+        if not txn_reqs then
+            txn_reqs = {}
+            self._txn_reqs = txn_reqs
+        end
+        txn_reqs[#reqs] = cmd
+
+        return res, err
+    end
+
+    local res, err = do_cmd(self, cmd)
+    update_multi_state(self, cmd, res)
+
+    return res, err
+end
+
+
 function _M.multi(self)
-    -- the connection must not be reused until EXEC or DISCARD (issue #176)
-    self._in_multi = true
-    return _do_cmd(self, "multi")
+    return do_multi_cmd(self, "multi")
 end
 
 
 function _M.exec(self)
-    self._in_multi = false
-    return _do_cmd(self, "exec")
+    return do_multi_cmd(self, "exec")
 end
 
 
 function _M.discard(self)
-    self._in_multi = false
-    return _do_cmd(self, "discard")
-end
-
-
-function _M.hmget(self, hashname, ...)
-    if select("#", ...) == 1 and type((...)) == "table" then
-        return _do_cmd(self, "hmget", hashname, unpack((...)))
-    end
-
-    return _do_cmd(self, "hmget", hashname, ...)
+    return do_multi_cmd(self, "discard")
 end
 
 
 function _M.init_pipeline(self, n)
     self._reqs = new_tab(n or 4, 0)
-    self._in_multi_saved = rawget(self, "_in_multi")
+    self._txn_reqs = nil
 end
 
 
 function _M.cancel_pipeline(self)
     self._reqs = nil
-    self._in_multi = rawget(self, "_in_multi_saved")
+    self._txn_reqs = nil
 end
 
 
@@ -789,6 +830,9 @@ function _M.commit_pipeline(self)
     end
 
     self._reqs = nil
+
+    local txn_reqs = rawget(self, "_txn_reqs")
+    self._txn_reqs = nil
 
     local sock = rawget(self, "_sock")
     if not sock then
@@ -809,6 +853,10 @@ function _M.commit_pipeline(self)
     local vals = new_tab(nreqs, 0)
     for i = 1, nreqs do
         local res, err = _read_reply(self, sock)
+        if txn_reqs and txn_reqs[i] then
+            update_multi_state(self, txn_reqs[i], res)
+        end
+
         if res then
             nvals = nvals + 1
             vals[nvals] = res

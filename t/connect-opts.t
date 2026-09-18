@@ -336,3 +336,92 @@ keepalive timer: yes
 ping: PONG
 --- no_error_log
 [error]
+
+
+
+=== TEST 9: db and username never share a pool
+--- global_config eval: $::GlobalConfig
+--- server_config
+        content_by_lua_block {
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:set_timeout(1000) -- 1 sec
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            local res, err = red:acl("setuser", "1", "reset", "on", ">s3cret", "~*", "+@all")
+            if not res then
+                ngx.say("failed to create the acl user: ", err)
+                return
+            end
+
+            red:set_keepalive(0, 1024)
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT, { db = 1 })
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            red:set_keepalive(0, 1024)
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT,
+                                        { username = "1", password = "s3cret" })
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            ngx.say("whoami: ", (red:acl("whoami")))
+            ngx.say("db: ", string.match(red:client("info"), "db=(%d+)"))
+            red:close()
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            red:acl("deluser", "1")
+            red:close()
+        }
+--- response_body
+whoami: 1
+db: 0
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: db must be a number
+--- global_config eval: $::GlobalConfig
+--- server_config
+        content_by_lua_block {
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:set_timeout(1000) -- 1 sec
+
+            local ok, err = pcall(red.connect, red, "127.0.0.1", $TEST_NGINX_REDIS_PORT,
+                                  { db = "1/user=alice" })
+            ngx.say("connect: ", ok, " ", err)
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT, { db = "1" })
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            ngx.say("db: ", string.match(red:client("info"), "db=(%d+)"))
+            red:close()
+        }
+--- response_body
+connect: false bad option db: number expected, got string
+db: 1
+--- no_error_log
+[error]

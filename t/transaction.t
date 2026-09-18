@@ -334,3 +334,153 @@ ok
 ok
 --- no_error_log
 [error]
+
+
+
+=== TEST 8: a pipelined DISCARD only ends the transaction once it is confirmed
+--- global_config eval: $::GlobalConfig
+--- server_config
+        content_by_lua_block {
+            local cjson = require "cjson"
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:set_timeout(1000) -- 1 sec
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            red:multi()
+            red:init_pipeline()
+            red:discard()
+
+            local ok, err = red:set_keepalive(0, 1024)
+            if not ok then
+                ngx.say("refused: ", err)
+            else
+                ngx.say("kept alive")
+            end
+
+            local results, err = red:commit_pipeline()
+            if not results then
+                ngx.say("failed to commit: ", err)
+                return
+            end
+
+            ngx.say("results: ", cjson.encode(results))
+
+            local ok, err = red:set_keepalive(0, 1024)
+            if not ok then
+                ngx.say("refused: ", err)
+                return
+            end
+
+            ngx.say("ok")
+        }
+--- response_body
+refused: in transaction
+results: ["OK"]
+ok
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: a rejected DISCARD leaves the transaction open
+--- global_config eval: $::GlobalConfig
+--- server_config
+        content_by_lua_block {
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:set_timeout(1000) -- 1 sec
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            local res, err = red:acl("setuser", "resty-txn", "reset", "on",
+                                     ">s3cret", "~*", "+@all", "-discard")
+            if not res then
+                ngx.say("failed to create the acl user: ", err)
+                return
+            end
+
+            red:set_keepalive(0, 1024)
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT,
+                                        { username = "resty-txn", password = "s3cret" })
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            red:multi()
+            red:set("txn", 4)
+
+            local res, err = red:discard()
+            ngx.say("discard: ", res, " ", string.match(err, "^%u+"))
+
+            local ok, err = red:set_keepalive(0, 1024)
+            if not ok then
+                ngx.say("refused: ", err)
+            else
+                ngx.say("kept alive")
+            end
+
+            red:close()
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            red:acl("deluser", "resty-txn")
+            red:close()
+        }
+--- response_body
+discard: false NOPERM
+refused: in transaction
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: cancel_pipeline without a pipeline keeps the transaction state
+--- global_config eval: $::GlobalConfig
+--- server_config
+        content_by_lua_block {
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:set_timeout(1000) -- 1 sec
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            red:multi()
+            red:cancel_pipeline()
+
+            local ok, err = red:set_keepalive(0, 1024)
+            if not ok then
+                ngx.say("refused: ", err)
+            else
+                ngx.say("kept alive")
+            end
+
+            red:discard()
+            red:close()
+        }
+--- response_body
+refused: in transaction
+--- no_error_log
+[error]

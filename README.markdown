@@ -264,11 +264,11 @@ The optional `options_table` argument is a Lua table holding the following keys:
 
 * `pool`
 
-    Specifies a custom name for the connection pool being used. If omitted, then the connection pool name will be generated from the string template `<host>:<port>` or `<unix-socket-path>`, followed by `/<username>` when the `username` option is in effect and `/<db>` when the `db` option is given (for example `127.0.0.1:6379/1` or `127.0.0.1:6379/alice/2`), so that connections to different databases or ACL users never share a pool. The `password` is never part of the pool name: every caller sharing a pool must authenticate the same way, or specify its own `pool`.
+    Specifies a custom name for the connection pool being used. If omitted, then the connection pool name will be generated from the string template `<host>:<port>` or `<unix-socket-path>`, followed by `/db=<db>` when the `db` option is given and `/user=<username>` when the `username` option is in effect (for example `127.0.0.1:6379/db=1` or `127.0.0.1:6379/db=2/user=alice`), so that connections to different databases or ACL users never share a pool. The `password` is never part of the pool name: every caller sharing a pool must authenticate the same way, or specify its own `pool`.
 
 * `db`
 
-    Selects the given Redis database (a number) with the `SELECT` command right after a *new* connection is established. Connections reused from the connection pool are left untouched, which is why such connections get their own pool (see `pool` above). Omit this option for the default database `0`. If `SELECT` fails, `connect` closes the connection and returns `nil` plus the error string `"failed to select database <db>: <err>"`.
+    Selects the given Redis database with the `SELECT` command right after a *new* connection is established. The value must be a number (or a numeric string); anything else raises a Lua error. Connections reused from the connection pool are left untouched, which is why such connections get their own pool (see `pool` above). Omit this option for the default database `0`. If `SELECT` fails, `connect` closes the connection and returns `nil` plus the error string `"failed to select database <db>: <err>"`.
 
 * `password`
 
@@ -331,7 +331,7 @@ In case of success, returns `1`. In case of errors, returns `nil` with a string 
 
 Only call this method in the place you would have called the `close` method instead. Calling this method will immediately turn the current redis object into the `closed` state. Any subsequent operations other than `connect()` on the current object will return the `closed` error.
 
-A connection with an open transaction (after `multi` but before `exec` or `discard`) cannot be put into the pool: this method returns `nil` and the error string `"in transaction"` and the connection stays open. Call `exec`, `discard` or `close` first. Note that `WATCH` is not tracked: `unwatch` (or `close`) before keeping such a connection alive.
+A connection with an open transaction cannot be put into the pool: from the `multi` call until Redis has acknowledged an `exec` or `discard`, this method returns `nil` and the error string `"in transaction"` and the connection stays open. If `exec` or `discard` fails with a Redis error reply (for example `EXECABORT` or `NOPERM`), the connection is still considered to be in a transaction; `close` it. Pipelined `multi`, `exec` and `discard` take effect when their replies are read by [commit_pipeline](#commit_pipeline). Note that `WATCH` is not tracked: `unwatch` (or `close`) before keeping such a connection alive.
 
 [Back to TOC](#table-of-contents)
 
