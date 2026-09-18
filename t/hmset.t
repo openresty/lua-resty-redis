@@ -177,3 +177,34 @@ hmget table: ["bark","meow",null]
 hmget single: ["bark"]
 --- no_error_log
 [error]
+
+
+
+=== TEST 5: hmget honours a pending module prefix
+--- global_config eval: $::GlobalConfig
+--- server_config
+        content_by_lua_block {
+            local redis = require "resty.redis"
+            redis.register_module_prefix("review")
+
+            local red = redis:new()
+
+            red:set_timeout(1000) -- 1 sec
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            local res, err = red:review():hmget("animals", "dog")
+            ngx.say("hmget: ", res, " ", string.match(tostring(err), "review%.hmget"))
+            ngx.say("ping: ", (red:ping()))
+
+            red:close()
+        }
+--- response_body
+hmget: false review.hmget
+ping: PONG
+--- no_error_log
+[error]
