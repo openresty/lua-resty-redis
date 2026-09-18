@@ -243,3 +243,100 @@ dog:
 hello world
 --- no_error_log
 [error]
+
+
+
+=== TEST 5: github issue #135: big integer arguments are not mangled
+--- global_config eval: $::GlobalConfig
+--- server_config
+        content_by_lua_block {
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:set_timeout(1000) -- 1 sec
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            local nums = {
+                1824192940134586,
+                -1824192940134586,
+                2^53,
+                1e15,
+                2^63,
+            }
+
+            for i, num in ipairs(nums) do
+                local ok, err = red:set("big-int", num)
+                if not ok then
+                    ngx.say("failed to set: ", err)
+                    return
+                end
+
+                local res, err = red:get("big-int")
+                if not res then
+                    ngx.say("failed to get: ", err)
+                    return
+                end
+
+                ngx.say(i, ": ", res)
+            end
+
+            red:del("big-int")
+            red:close()
+        }
+--- response_body
+1: 1824192940134586
+2: -1824192940134586
+3: 9007199254740992
+4: 1000000000000000
+5: 9223372036854775808
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: github issue #135: other number arguments are unchanged
+--- global_config eval: $::GlobalConfig
+--- server_config
+        content_by_lua_block {
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            red:set_timeout(1000) -- 1 sec
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            red:del("pi", "beyond", "big-hash")
+
+            red:set("pi", 3.14)
+            ngx.say("pi: ", (red:get("pi")))
+
+            -- beyond 64-bit integers, tostring() form is kept
+            red:set("beyond", 2^64)
+            ngx.say("beyond: ", (red:get("beyond")))
+
+            red:expire("pi", 60)
+            ngx.say("ttl: ", (red:ttl("pi")))
+
+            -- the hmset table form goes through the same encoder
+            red:hmset("big-hash", { id = 123456789012345 })
+            ngx.say("id: ", (red:hget("big-hash", "id")))
+
+            red:del("pi", "beyond", "big-hash")
+            red:close()
+        }
+--- response_body
+pi: 3.14
+beyond: 1.844674407371e+19
+ttl: 60
+id: 123456789012345
+--- no_error_log
+[error]
