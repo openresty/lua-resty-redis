@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   test:
-    name: nginx 1.31.6
+    name: nginx 1.31.7
     runs-on: ubuntu-22.04
     timeout-minutes: 45
 
@@ -33,7 +33,7 @@ jobs:
       - name: Build and test
         env:
           CC: gcc
-          NGINX_VERSION: 1.31.6
+          NGINX_VERSION: 1.31.7
         run: |
           set -e
           mkdir -p download-cache
